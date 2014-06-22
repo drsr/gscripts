@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Tweaks
 // @namespace  http://drsr/
-// @version    0.8.1
+// @version    0.8.2
 // @description  Tweak TradeMe page elements, including the main menu, header, footer, and sidebar, and maps
 // @include    http://www.trademe.co.nz/*
 //    exclude iframe on stuff.co.nz pages
