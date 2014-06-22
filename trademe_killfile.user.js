@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    2.7
+// @version    2.8
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
 // @include    http://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
 // @include    http://www.trademe.co.nz/Members/Listings.aspx*
 // @include    http://www.trademe.co.nz/Members/Logout.aspx*
 // @include    http://www.trademe.co.nz/MyTradeMe/Favourites.aspx?pv=3
+// @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
 // @grant      GM_getResourceURL
 // @grant      GM_registerMenuCommand
 // @grant      GM_addStyle
@@ -17,6 +18,7 @@
 // ==/UserScript==
 
 /* Changes:
+v2.8: external dependencies to comply with Greasyfork rules
 v2.7: work with changes to favorite sellers list
 v2.6: work with TradeMe changes to a couple of pages
 v2.5: gave up on free hosting, all resources inline now
@@ -53,10 +55,16 @@ window.onerror=function(msg, url, linenumber){
 
 var $ = unsafeWindow.jQuery;
 var jQuery = unsafeWindow.jQuery;
-var GM_config = null;
 
-GM_registerMenuCommand('TradeMe Killfile: Settings',openGMConfig);
-    
+// load this way so we don't need to have an extra jQuery in the required list for the jQuery plugins to work
+$.when(
+	$.ajax({
+  		url: "http://cdn.jsdelivr.net/jquery.jeditable/1.7.3/jquery.jeditable.js",
+  		dataType: "script",
+        cache: true
+	})    
+).done(scriptMain);
+
 // TODO make icons configurable?
 // trollface.png
 var troll_icon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAASCAYAAABfJS4tAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAadEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjEwMPRyoQAAA6ZJREFUOE+NVGdPm2cURfAFCYl/U5U2HxASXxqSDyjTdWNGiAPUahIUVIwTgRw1UBLTxhbDYWOmQCyxpxhiCrH3EHsKEHtz+p6bkihqQmrp0fv6eZ/n3HvPOffa2V3xy7Il4S9TBKxxZrwKf4Hfg5/i2ZNfZT0P+g1GZS85IRZXYci3/Nx0BPg/gsEQisjISKSnpyMtLQ3l5eWoqKhAVVUV6urqUFNTg/7+fgwMDKCoqAj37939OvjbP/9AXFwcJiYmsLi4iJmZGaytrWF9fR0rKyuYnZ0VoL6+PgHt7OzE/Pw8jo+P0dLSAh/vB18Gt1jMOD09FZDl5WVsbW1JEO5dXFxgaWkJh4eHODs7w+7uLqampiQI909OTmA0GhH95vXn4JGvjVIiLxGwt7cXg4ODEuT8/FyANzY2UFZWhpiYGAQFBSErKwurq6uSMc+Mj4/j+vWfPgHbUt/DbH73kYLR0VEkJydLBlqtFh0dHXKRfBcXFyMnJwcWiwXZ2dnybWRkBMPDw2hoaEBGRga8vTUfwP21D4UjClRdXY3m5mZMT09L9twnx8x4f38fm5ubst/e3i7Z805paancqa2tlSoZOOCxH+x8FdKbmppEqLa2NoyNjYkoFIiKE4gZLywsoLGxUUTkWXLP9/z8fISFhQl9lZWVGBoawg8u38HOpBAeHx8vYBqNRriam5uT0pgRueUegzNLOoZ2y8zMFCvyP+9Tm/r6ehQWFuJn1b/20z7yE6XVajUiIiJgs9k+0kPeeIElk2eWyowZNDw8HHq9XvShiAzo4eGB+Ni/P/DsqxDOiJ6enoiKioLVapXDFInUpKSkiEO6u7sRGBgoriAFdAbdRKq2t7ehUqlgCHn+yRm+Pl7Y29uDm5sbnJycYG9vDwcHB3k6OjrC2dkZOp0OJSUl4hhmR3pyc3OFawLn5eXhF7Xqcx/7PfTB0dGRlJqYmIjU1FTFgmYkJSUJQFdXlzQNhWRbk192HrNkQhT92rUf/9t5Af5a6Z6dnR2xDQNER0cL1wUFBVI2M6Lqra2tEuyytTkGXFy+R0riF4ZRqD5EotOnk5OT4l36lhajpcgv1aeVenp65Ekabt+6pZR//+sDSKcLxMHBgQDRdlwUj4OIi/OAVPCdgO7u7spEuw1r7LurR2bYSz0SEhIka/J4uRiMATgyTSYTXF1d4aVRI1uZ09+cwZcHDPpg3Lt7B/qQEGUeG8RWHCo3b3jAz9cLL0KD/z+YAvoPq0rRAALR3w0AAAAASUVORK5CYII=";
@@ -653,6 +661,7 @@ function openGMConfig() {
 
 // ---------------------------------------------------------------------------------------
 function scriptMain() {
+	GM_registerMenuCommand('TradeMe Killfile: Settings',openGMConfig);
 
     initSettings();
     
@@ -689,178 +698,3 @@ function scriptMain() {
         sessionStorage.removeItem(USERNAME_STORAGE_ITEM);
     }
 }
-//----------------- Includes
-/*
- * Jeditable - jQuery in place edit plugin
- *
- * Copyright (c) 2006-2009 Mika Tuupola, Dylan Verheul
- *
- * Licensed under the MIT license:
- *   http://www.opensource.org/licenses/mit-license.php
- *
- * Project home:
- *   http://www.appelsiini.net/projects/jeditable
- *
- * Based on editable by Dylan Verheul <dylan_at_dyve.net>:
- *    http://www.dyve.net/jquery/?editable
- *
- */
-
-/**
-  * Version 1.7.2-dev
- */
-
-(function($){$.fn.editable=function(target,options){if('disable'==target){$(this).data('disabled.editable',true);return;}
-if('enable'==target){$(this).data('disabled.editable',false);return;}
-if('destroy'==target){$(this).unbind($(this).data('event.editable')).removeData('disabled.editable').removeData('event.editable');return;}
-var settings=$.extend({},$.fn.editable.defaults,{target:target},options);var plugin=$.editable.types[settings.type].plugin||function(){};var submit=$.editable.types[settings.type].submit||function(){};var buttons=$.editable.types[settings.type].buttons||$.editable.types['defaults'].buttons;var content=$.editable.types[settings.type].content||$.editable.types['defaults'].content;var element=$.editable.types[settings.type].element||$.editable.types['defaults'].element;var reset=$.editable.types[settings.type].reset||$.editable.types['defaults'].reset;var callback=settings.callback||function(){};var onedit=settings.onedit||function(){};var onsubmit=settings.onsubmit||function(){};var onreset=settings.onreset||function(){};var onerror=settings.onerror||reset;if(settings.tooltip){$(this).attr('title',settings.tooltip);}
-settings.autowidth='auto'==settings.width;settings.autoheight='auto'==settings.height;return this.each(function(){var self=this;var savedwidth=$(self).width();var savedheight=$(self).height();$(this).data('event.editable',settings.event);if(!$.trim($(this).html())){$(this).html(settings.placeholder);}
-$(this).bind(settings.event,function(e){if(true===$(this).data('disabled.editable')){return;}
-if(self.editing){return;}
-if(false===onedit.apply(this,[settings,self])){return;}
-e.preventDefault();e.stopPropagation();if(settings.tooltip){$(self).removeAttr('title');}
-if(0==$(self).width()){settings.width=savedwidth;settings.height=savedheight;}else{if(settings.width!='none'){settings.width=settings.autowidth?$(self).width():settings.width;}
-if(settings.height!='none'){settings.height=settings.autoheight?$(self).height():settings.height;}}
-if($(this).html().toLowerCase().replace(/(;|"|\/)/g,'')==settings.placeholder.toLowerCase().replace(/(;|"|\/)/g,'')){$(this).html('');}
-self.editing=true;self.revert=$(self).html();$(self).html('');var form=$('<form />');if(settings.cssclass){if('inherit'==settings.cssclass){form.attr('class',$(self).attr('class'));}else{form.attr('class',settings.cssclass);}}
-if(settings.style){if('inherit'==settings.style){form.attr('style',$(self).attr('style'));form.css('display',$(self).css('display'));}else{form.attr('style',settings.style);}}
-var input=element.apply(form,[settings,self]);var input_content;if(settings.loadurl){var t=setTimeout(function(){input.disabled=true;content.apply(form,[settings.loadtext,settings,self]);},100);var loaddata={};loaddata[settings.id]=self.id;if($.isFunction(settings.loaddata)){$.extend(loaddata,settings.loaddata.apply(self,[self.revert,settings]));}else{$.extend(loaddata,settings.loaddata);}
-$.ajax({type:settings.loadtype,url:settings.loadurl,data:loaddata,async:false,success:function(result){window.clearTimeout(t);input_content=result;input.disabled=false;}});}else if(settings.data){input_content=settings.data;if($.isFunction(settings.data)){input_content=settings.data.apply(self,[self.revert,settings]);}}else{input_content=self.revert;}
-content.apply(form,[input_content,settings,self]);input.attr('name',settings.name);buttons.apply(form,[settings,self]);$(self).append(form);plugin.apply(form,[settings,self]);$(':input:visible:enabled:first',form).focus();if(settings.select){input.select();}
-input.keydown(function(e){if(e.keyCode==27){e.preventDefault();reset.apply(form,[settings,self]);}});var t;if('cancel'==settings.onblur){input.blur(function(e){t=setTimeout(function(){reset.apply(form,[settings,self]);},500);});}else if('submit'==settings.onblur){input.blur(function(e){t=setTimeout(function(){form.submit();},200);});}else if($.isFunction(settings.onblur)){input.blur(function(e){settings.onblur.apply(self,[input.val(),settings]);});}else{input.blur(function(e){});}
-form.submit(function(e){if(t){clearTimeout(t);}
-e.preventDefault();if(false!==onsubmit.apply(form,[settings,self])){if(false!==submit.apply(form,[settings,self])){if($.isFunction(settings.target)){var str=settings.target.apply(self,[input.val(),settings]);$(self).html(str);self.editing=false;callback.apply(self,[self.innerHTML,settings]);if(!$.trim($(self).html())){$(self).html(settings.placeholder);}}else{var submitdata={};submitdata[settings.name]=input.val();submitdata[settings.id]=self.id;if($.isFunction(settings.submitdata)){$.extend(submitdata,settings.submitdata.apply(self,[self.revert,settings]));}else{$.extend(submitdata,settings.submitdata);}
-if('PUT'==settings.method){submitdata['_method']='put';}
-$(self).html(settings.indicator);var ajaxoptions={type:'POST',data:submitdata,dataType:'html',url:settings.target,success:function(result,status){if(ajaxoptions.dataType=='html'){$(self).html(result);}
-self.editing=false;callback.apply(self,[result,settings]);if(!$.trim($(self).html())){$(self).html(settings.placeholder);}},error:function(xhr,status,error){onerror.apply(form,[settings,self,xhr]);}};$.extend(ajaxoptions,settings.ajaxoptions);$.ajax(ajaxoptions);}}}
-$(self).attr('title',settings.tooltip);return false;});});this.reset=function(form){if(this.editing){if(false!==onreset.apply(form,[settings,self])){$(self).html(self.revert);self.editing=false;if(!$.trim($(self).html())){$(self).html(settings.placeholder);}
-if(settings.tooltip){$(self).attr('title',settings.tooltip);}}}};});};$.editable={types:{defaults:{element:function(settings,original){var input=$('<input type="hidden"></input>');$(this).append(input);return(input);},content:function(string,settings,original){$(':input:first',this).val(string);},reset:function(settings,original){original.reset(this);},buttons:function(settings,original){var form=this;if(settings.submit){if(settings.submit.match(/>$/)){var submit=$(settings.submit).click(function(){if(submit.attr("type")!="submit"){form.submit();}});}else{var submit=$('<button type="submit" />');submit.html(settings.submit);}
-$(this).append(submit);}
-if(settings.cancel){if(settings.cancel.match(/>$/)){var cancel=$(settings.cancel);}else{var cancel=$('<button type="cancel" />');cancel.html(settings.cancel);}
-$(this).append(cancel);$(cancel).click(function(event){if($.isFunction($.editable.types[settings.type].reset)){var reset=$.editable.types[settings.type].reset;}else{var reset=$.editable.types['defaults'].reset;}
-reset.apply(form,[settings,original]);return false;});}}},text:{element:function(settings,original){var input=$('<input />');if(settings.width!='none'){input.attr('width',settings.width);}
-if(settings.height!='none'){input.attr('height',settings.height);}
-input.attr('autocomplete','off');$(this).append(input);return(input);}},textarea:{element:function(settings,original){var textarea=$('<textarea />');if(settings.rows){textarea.attr('rows',settings.rows);}else if(settings.height!="none"){textarea.height(settings.height);}
-if(settings.cols){textarea.attr('cols',settings.cols);}else if(settings.width!="none"){textarea.width(settings.width);}
-$(this).append(textarea);return(textarea);}},select:{element:function(settings,original){var select=$('<select />');$(this).append(select);return(select);},content:function(data,settings,original){if(String==data.constructor){eval('var json = '+data);}else{var json=data;}
-for(var key in json){if(!json.hasOwnProperty(key)){continue;}
-if('selected'==key){continue;}
-var option=$('<option />').val(key).append(json[key]);$('select',this).append(option);}
-$('select',this).children().each(function(){if($(this).val()==json['selected']||$(this).text()==$.trim(original.revert)){$(this).attr('selected','selected');}});if(!settings.submit){var form=this;$('select',this).change(function(){form.submit();});}}}},addInputType:function(name,input){$.editable.types[name]=input;}};$.fn.editable.defaults={name:'value',id:'id',type:'text',width:'auto',height:'auto',event:'click.editable',onblur:'cancel',loadtype:'GET',loadtext:'Loading...',placeholder:'Click to edit',loaddata:{},submitdata:{},ajaxoptions:{}};})(jQuery);
-
-/*
-Slightly modified version by drsr of :
-
-GM_config.js from http://github.com/sizzlemctwizzle/GM_config/raw/master/gm_config.js
-Copyright 2009-2010, GM_config Contributors
-All rights reserved.
-
-GM_config Contributors:
-    Mike Medley <medleymind@gmail.com>
-    Joe Simmons
-    Izzy Soft
-    Marti Martz
-
-GM_config is distributed under the terms of the GNU Lesser General Public License.
-
-    GM_config is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-function GM_configStruct(){if(arguments.length)
-GM_configInit(this,arguments);}
-function GM_configInit(config,args){if(typeof config.fields=="undefined"){config.fields={};config.onInit=function(){};config.onOpen=function(){};config.onSave=function(){};config.onClose=function(){};config.onReset=function(){};config.isOpen=false;config.title='User Script Settings';config.css={basic:"#GM_config * { font-family: arial,tahoma,myriad pro,sans-serif; }\
-             #GM_config { background: #FFF; }\
-             #GM_config input[type='radio'] { margin-right: 8px; }\
-             #GM_config .indent40 { margin-left: 40%; }\
-             #GM_config .field_label { font-weight: bold; font-size: 12px; margin-right: 6px; }\
-             #GM_config .block { display: block; }\
-             #GM_config .saveclose_buttons { margin: 16px 10px 10px; padding: 2px 12px; }\
-             #GM_config .reset, #GM_config .reset a,\
-             #GM_config_buttons_holder { text-align: right; color: #000; }\
-             #GM_config .config_header { font-size: 20pt; margin: 0; }\
-             #GM_config .config_desc, #GM_config .section_desc, #GM_config .reset { font-size: 9pt; }\
-             #GM_config .center { text-align: center; }\
-             #GM_config .section_header_holder { margin-top: 8px; }\
-             #GM_config .config_var { margin: 0 0 4px; }\
-             #GM_config .section_header { font-size: 13pt; background: #414141; color: #FFF;\
-              border: 1px solid #000; margin: 0; }\
-             #GM_config .section_desc { font-size: 9pt; background: #EFEFEF; color: #575757;\
-             border: 1px solid #CCC; margin: 0 0 6px; }",stylish:""};}
-if(typeof config.id=="undefined")
-config.id='GM_config';var settings=null;if(config.id!='GM_config')
-config.css.basic=config.css.basic.replace(/#GM_config/gm,'#'+config.id);var oldInitCb=config.onInit;for(var i=0,l=args.length,arg;i<l;++i){arg=args[i];if(typeof arg.appendChild=="function"){config.frame=arg;continue;}
-switch(typeof arg){case'object':for(var j in arg){if(typeof arg[j]!="function"){settings=arg;break;}
-config["on"+j.charAt(0).toUpperCase()+j.slice(1)]=arg[j];}
-break;case'function':config.onOpen=arg;break;case'string':if(arg.indexOf('{')!=-1&&arg.indexOf('}')!=-1)
-config.css.stylish=arg;else
-config.title=arg;break;}}
-if(settings){var stored=config.read();for(var id in settings)
-config.fields[id]=new GM_configField(settings[id],stored[id],id);}
-if(config.onInit===oldInitCb)
-config.onInit=function(){};oldInitCb();}
-GM_configStruct.prototype={init:function(){GM_configInit(this,arguments);},open:function(){var match=document.getElementById(this.id);if(match&&(match.tagName=="IFRAME"||match.childNodes.length>0))return;var config=this;function buildConfigWin(body,head){var create=config.create,fields=config.fields,configId=config.id,bodyWrapper=create('div',{id:configId+'_wrapper'});head.appendChild(create('style',{type:'text/css',textContent:config.css.basic+config.css.stylish}));bodyWrapper.appendChild(create('div',{id:configId+'_header',className:'config_header block center',innerHTML:config.title}));var section=bodyWrapper,secNum=0;for(var id in fields){var field=fields[id].settings;if(field.section){section=bodyWrapper.appendChild(create('div',{className:'section_header_holder',id:configId+'_section_'+secNum}));if(typeof field.section[0]=="string")
-section.appendChild(create('div',{className:'section_header center',id:configId+'_section_header_'+secNum,innerHTML:field.section[0]}));if(typeof field.section[1]=="string")
-section.appendChild(create('p',{className:'section_desc center',id:configId+'_section_desc_'+secNum,innerHTML:field.section[1]}));++secNum;}
-section.appendChild(fields[id].toNode(configId));}
-bodyWrapper.appendChild(create('div',{id:configId+'_buttons_holder'},create('button',{id:configId+'_saveBtn',textContent:'Save',title:'Save settings',className:'saveclose_buttons',onclick:function(){config.save()}}),create('button',{id:configId+'_closeBtn',textContent:'Cancel',title:'Cancel changes and close settings',className:'saveclose_buttons',onclick:function(){config.close()}}),create('div',{className:'reset_holder block'},create('a',{id:configId+'_resetLink',textContent:'Reset to defaults',href:'#',title:'Reset fields to default values',className:'reset',onclick:function(e){e.preventDefault();config.reset()}}))));body.appendChild(bodyWrapper);config.center();window.addEventListener('resize',config.center,false);config.onOpen(config.frame.contentDocument||config.frame.ownerDocument,config.frame.contentWindow||window,config.frame);window.addEventListener('beforeunload',function(){config.close();},false);config.frame.style.display="block";config.isOpen=true;}
-var defaultStyle='position:fixed; top:0; left:0; opacity:0; display:none; z-index:999;'+'width:75%; height:75%; max-height:95%; max-width:95%;'+'border:1px solid #000000; overflow:auto; bottom: auto;'+'right: auto; margin: 0; padding: 0;';if(this.frame){this.frame.id=this.id;this.frame.setAttribute('style',defaultStyle);buildConfigWin(this.frame,this.frame.ownerDocument.getElementsByTagName('head')[0]);}else{document.body.appendChild((this.frame=this.create('iframe',{id:this.id,style:defaultStyle})));this.frame.src='about:blank';this.frame.addEventListener('load',function(e){var frame=config.frame;var body=frame.contentDocument.getElementsByTagName('body')[0];body.id=config.id;buildConfigWin(body,frame.contentDocument.getElementsByTagName('head')[0]);},false);}},save:function(){var fields=this.fields;for(id in fields)
-if(fields[id].toValue()===null)
-return;this.write();this.onSave();},close:function(){if(this.frame.contentDocument){this.remove(this.frame);this.frame=null;}else{this.frame.innerHTML="";this.frame.style.display="none";}
-var fields=this.fields;for(var id in fields)
-fields[id].node=null;this.onClose();this.isOpen=false;},set:function(name,val){this.fields[name].value=val;},get:function(name){return this.fields[name].value;},write:function(store,obj){if(!obj){var values={},fields=this.fields;for(var id in fields){var field=fields[id];if(field.settings.type!="button")
-values[id]=field.value;}}
-try{this.setValue(store||this.id,this.stringify(obj||values));}catch(e){this.log("GM_config failed to save settings!");}},read:function(store){try{var rval=this.parser(this.getValue(store||this.id,'{}'));}catch(e){this.log("GM_config failed to read saved settings!");var rval={};}
-return rval;},reset:function(){var fields=this.fields,doc=this.frame.contentDocument||this.frame.ownerDocument,type;for(id in fields){var node=fields[id].node,field=fields[id].settings,noDefault=typeof field['default']=="undefined",type=field.type;switch(type){case'checkbox':node.checked=noDefault?GM_configDefaultValue(type):field['default'];break;case'select':if(field['default']){for(var i=0,len=node.options.length;i<len;++i)
-if(node.options[i].value==field['default'])
-node.selectedIndex=i;}else
-node.selectedIndex=0;break;case'radio':var radios=node.getElementsByTagName('input');for(var i=0,len=radios.length;i<len;++i)
-if(radios[i].value==field['default'])
-radios[i].checked=true;break;case'button':break;default:node.value=noDefault?GM_configDefaultValue(type):field['default'];break;}}
-this.onReset();},create:function(){switch(arguments.length){case 1:var A=document.createTextNode(arguments[0]);break;default:var A=document.createElement(arguments[0]),B=arguments[1];for(var b in B){if(b.indexOf("on")==0)
-A.addEventListener(b.substring(2),B[b],false);else if(",style,accesskey,id,name,src,href,which,for".indexOf(","+
-b.toLowerCase())!=-1)
-A.setAttribute(b,B[b]);else
-A[b]=B[b];}
-for(var i=2,len=arguments.length;i<len;++i)
-A.appendChild(arguments[i]);}
-return A;},center:function(){var node=this.frame,style=node.style,beforeOpacity=style.opacity;if(style.display=='none')style.opacity='0';style.display='';style.top=Math.floor((window.innerHeight/2)-(node.offsetHeight/2))+'px';style.left=Math.floor((window.innerWidth/2)-(node.offsetWidth/2))+'px';style.opacity='1';},remove:function(el){if(el&&el.parentNode)el.parentNode.removeChild(el);}};(function(){var isGM=typeof GM_getValue!='undefined'&&typeof GM_getValue('a','b')!='undefined',setValue,getValue,stringify,parser;if(!isGM){setValue=function(name,value){return localStorage.setItem(name,value);};getValue=function(name,def){var s=localStorage.getItem(name);return s==null?def:s};stringify=JSON.stringify;parser=JSON.parse;}else{setValue=GM_setValue;getValue=GM_getValue;stringify=typeof JSON=="undefined"?function(obj){return obj.toSource();}:JSON.stringify;parser=typeof JSON=="undefined"?function(jsonData){return(new Function('return '+jsonData+';'))();}:JSON.parse;}
-GM_configStruct.prototype.isGM=isGM;GM_configStruct.prototype.setValue=setValue;GM_configStruct.prototype.getValue=getValue;GM_configStruct.prototype.stringify=stringify;GM_configStruct.prototype.parser=parser;GM_configStruct.prototype.log=isGM?GM_log:(window.opera?opera.postError:console.log);})();function GM_configDefaultValue(type){var value;if(type.indexOf('unsigned ')==0)
-type=type.substring(9);switch(type){case'radio':case'select':value=settings.options[0];break;case'checkbox':value=false;break;case'int':case'integer':case'float':case'number':value=0;break;default:value='';}
-return value;}
-function GM_configField(settings,stored,id){this.settings=settings;this.id=id;var value=typeof stored=="undefined"?typeof settings['default']=="undefined"?GM_configDefaultValue(settings.type):settings['default']:stored;this.value=value;}
-GM_configField.prototype={create:GM_configStruct.prototype.create,node:null,toNode:function(configId){var field=this.settings,value=this.value,options=field.options,id=this.id,create=this.create;var retNode=create('div',{className:'config_var',id:configId+'_'+this.id+'_var',title:field.title||''}),firstProp;for(var i in field){firstProp=i;break;}
-var label=create('label',{innerHTML:field.label,id:configId+'_'+this.id+'_field_label',for:configId+'_field_'+this.id,className:'field_label'});switch(field.type){case'textarea':retNode.appendChild((this.node=create('textarea',{id:configId+'_field_'+this.id,innerHTML:value,cols:(field.cols?field.cols:20),rows:(field.rows?field.rows:2)})));break;case'radio':var wrap=create('div',{id:configId+'_field_'+id});this.node=wrap;for(var i=0,len=options.length;i<len;++i){var radLabel=wrap.appendChild(create('span',{innerHTML:options[i]}));var rad=wrap.appendChild(create('input',{value:options[i],type:'radio',name:id,checked:options[i]==value?true:false}));if(firstProp=="options")
-wrap.insertBefore(radLabel,rad);else
-wrap.appendChild(radLabel);}
-retNode.appendChild(wrap);break;case'select':var wrap=create('select',{id:configId+'_field_'+id});this.node=wrap;for(var i in options)
-wrap.appendChild(create('option',{innerHTML:options[i],value:i,selected:options[i]==value?true:false}));retNode.appendChild(wrap);break;case'checkbox':retNode.appendChild((this.node=create('input',{id:configId+'_field_'+id,type:'checkbox',value:value,checked:value})));break;case'button':var btn=create('input',{id:configId+'_field_'+id,type:'button',value:field.label,size:(field.size?field.size:25),title:field.title||''});this.node=btn;if(field.script)
-btn.addEventListener('click',function(){var scr=field.script;typeof scr=='function'?setTimeout(scr,0):eval(scr);},false);retNode.appendChild(btn);break;case'hidden':retNode.appendChild((this.node=create('input',{id:configId+'_field_'+id,type:'hidden',value:value})));break;default:retNode.appendChild((this.node=create('input',{id:configId+'_field_'+id,type:'text',value:value,size:(field.size?field.size:25)})));}
-if(field.type!="hidden"&&field.type!="button"&&typeof field.label=="string"){if(firstProp=="label")
-retNode.insertBefore(label,retNode.firstChild);else
-retNode.appendChild(label);}
-return retNode;},toValue:function(){var node=this.node,field=this.settings,type=field.type,unsigned=false,rval;if(type.indexOf('unsigned ')==0){type=type.substring(9);unsigned=true;}
-switch(type){case'checkbox':this.value=node.checked;break;case'select':this.value=node[node.selectedIndex].value;break;case'radio':var radios=node.getElementsByTagName('input');for(var i=0,len=radios.length;i<len;++i)
-if(radios[i].checked)
-this.value=radios[i].value;break;case'button':break;case'int':case'integer':var num=Number(node.value);var warn='Field labeled "'+field.label+'" expects a'+
-(unsigned?' positive ':'n ')+'integer value';if(isNaN(num)||Math.ceil(num)!=Math.floor(num)||(unsigned&&num<0)){alert(warn+'.');return null;}
-if(!this._checkNumberRange(num,warn))
-return null;this.value=num;break;case'float':case'number':var num=Number(node.value);var warn='Field labeled "'+field.label+'" expects a '+
-(unsigned?'positive ':'')+'number value';if(isNaN(num)||(unsigned&&num<0)){alert(warn+'.');return null;}
-if(!this._checkNumberRange(num,warn))
-return null;this.value=num;break;default:this.value=node.value;break;}
-return this.value;},_checkNumberRange:function(num,warn){var field=this.settings;if(typeof field.min=="number"&&num<field.min){alert(warn+' greater than or equal to '+field.min+'.');return null;}
-if(typeof field.max=="number"&&num>field.max){alert(warn+' less than or equal to '+field.max+'.');return null;}
-return true;}};var GM_config=new GM_configStruct();
-//------------- includes end
-scriptMain();
