@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    2.9.1
+// @version    2.9.2
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
 // @include    http://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
@@ -508,7 +508,9 @@ function modifySearchBox() {
          class:"ResetSearchForm", 
          title:"Search all topics for my messages (Killfile script)"}));
     // 	registerMenuCommand('TradeMe Killfile: Settings',openGMConfig);
-    $("<a href='javascript:void(0)' id='tmkfsettings' title='Trademe Killfile settings' style='margin-left:10px'><img src='http://drsr.site90.com/img/settings.png'/></a>")
+    $("<a href='javascript:void(0)' id='tmkfsettings' title='Trademe Killfile settings' style='margin-left:10px'>" +
+      "<img width='16' height='16' title='' alt='' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAD5UlEQVR4nGJkwAGam5u3MTIyejIwMDD8//9/e21trRc2dQAAAAD//2KBMRoaGgoYGRlj////39zQ0LDh////ht7e3gwMDAwMW7ZsMYSqiWVkZCz4////4oaGhgkMDAwMAAAAAP//YoRp5uPj6zc2NmY4f/48w/v373dxcXG5eXp6MjAwMDBs376d4du3b0cEBQVtDA0NGc6ePcvw6dOnwoaGhgkAAAAA//8EwTERwDAIQNGfu84YyMiKhISxLuKpomKDEQ1sXN97ALr7mBkigrsTEe+ck6oCYO9NZi5VZYyBmXHvPcD3AwAA//80zzERwAAMA7G/DoZhsoVnJN5CILlOFQM9fzkJbZkZbCOJ3eXukIRtZoa2JAF4AT4AAAD//zTQMRXAMAgFwB+W4oEJxKSeEICn1guZeGhg7NSTcOs/cPdHRLaqgpmRmaiqIaIlIpeZYWZwzkF3vxFxA8AHAAD//wBBAL7/AXh4eLb9/f0xCAgIGCwsLAAMDAwA4eHhAOTk5L6JiYlLAAAAAHd3d7UcHBxCHx8fAPT09ADU1NQA+Pj46AMDA88AAAD//wTBsQ3AMAgEwI9cYOg8CrNRsAPLMUo6ZAqU3D1m9qkqiAhVBWZGZt6IODNzAWCttd39VdVdVRARdDcyEz8AAAD//zzPwQkAMAgEsFO6hPtv5ssJ5EDUvtpskEMS7g5VhYjAzNDdv/ZUlWQmIgK7i5kBSVwAAAD//wTBsREAIAgAMe4bbWFNFvScBQbADiYwAbiZ+SJCqkq6W1R1ufsBNrDd/ZjZmhmpKokIycwH3A8AAP//gtuUmpq6/9+/fw4iIiIMKioqDM+fP2d48uTJTwYGBgYZGRl2SUlJhjt37jC8efOGgYmJ6eTs2bMtGBgYGAAAAAD//2JkYGBgKCoqCn3z5s0qGRkZhnfv3jFwcXExKCkpMbCzszMwMjLCQ//bt28MQkJCDE+ePGEQERFJ7uvrmwcAAAD//wTBsQ3AMAgAwS/S4QbJk2YBb5L1EELUxoVF7h4Ad19zTjKTvTcRgZkxxuDeyzmHqkJE6G5UFXd/ge8HAAD//wTBsQnAQAwEwcVcAeo//1YcOr8OhEB8JlDmmQcgIo5tMpOqQtJ372Vm2F26G0lvVZGZ2CYiDsAPAAD//wTBMRHAMAwDQJ2YaDCC7gVSAgURAEFgEGYUGPamMf8EgMzckhbJExF/VT22Z2bQ3bA9VfVGxEfySFqZuQHgAgAA//+CBSIzIyMjBxMTkwAjIyMvExOTgJ2d3awPHz7oQl145dChQxn/////9u/fv4//////8P///2//////CQAAAP//AwAvroSUkykoBQAAAABJRU5ErkJggg==' />"
+      +"</a>")
     	.appendTo(".reset-link");
     $("#tmkfsettings").click(openGMConfig);
 }
