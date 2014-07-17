@@ -1,34 +1,32 @@
 // ==UserScript==
 // @name       Trademe feedback item descriptions
 // @namespace  http://drsr/
-// @version    0.9
+// @version    1.0
 // @description  Adds auction item description and price (where available) to feedback listing
 // @include    http://www.trademe.co.nz/Members/Feedback.aspx*
 // @include    /http:\/\/www.trademe.co.nz\/stores\/.*\/feedback/
-// @grant      GM_addStyle
-// @grant      unsafeWindow
+// @grant      none
 // @copyright  public domain
 // ==/UserScript==
 /*
 * Changes:
+* v1.0 Greasemonkey 2.0
 * v0.9 Avoid double item descriptions from feedback filter script
 * v0.8 Fix for more stores
 * v0.7 Fix unescaped tags in auction titles
 * v0.5 Fix for stores
-* v0.4 Fixed bug that stopped new menu dropdowns working
-* v0.3 Greasemonkey 1.0
-* v0.2 add breadcrumbs for each item, slight speedup
 */
 
 
 // replace trademe's JS error handler
 window.onerror=function(msg, url, linenumber){
-//    console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
+    console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
         return true;
             };
 
-// use TM's jQuery
-var $ = unsafeWindow.jQuery;
+function addStyle(style) {
+	$("<style>").prop("type", "text/css").html(style).appendTo("head");
+}
 
 var listingQueue = [];
 function listingItem(auctionUrl, feedbackItem) {
@@ -83,7 +81,7 @@ function feedbackTableContainer() {
 }
 
 // link style for breadcrumbs to match style used in main listing
-GM_addStyle(".tmfbid_bc a{color:#0066CC; text-decoration:none;}");
+addStyle(".tmfbid_bc a{color:#0066CC; text-decoration:none;}");
 
 // for the first row in every feedback item (only row with valign="top")
 $("> table:eq(2) > tbody > tr[valign='top']", feedbackTableContainer()).each(
