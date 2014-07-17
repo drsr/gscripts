@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name       TradeMe shipping prices
 // @namespace  http://drsr/
-// @version    0.9.1
+// @version    0.9.2
 // @description  Show shipping price, seller, and other auction details on search results, and thumbnail image for non-gallery items
 // @include    http://www.trademe.co.nz/*
-// @grant      GM_addStyle
-// @grant      unsafeWindow
+// @grant      none
 // @copyright  public domain
 // ==/UserScript==
+// v0.9.2: Changes for Greasemonkey 2.0
 // v0.9: TM moved the seller name
 // v0.8: Tweaks to car details in search results in cases where TM already provides them
 // v0.7: Add kilometres, engine size etc. to car search results if available
@@ -19,7 +19,7 @@
 // Style to match buynow colour
 // Better guess at correct price for user's region (needs to handle "North Island", "South Island", "Auckland" etc)
 // Option to pick rural shipping
-var $ = unsafeWindow.jQuery;
+
 // replace trademe's JS error handler
 window.onerror=function(msg, url, linenumber){
 //    console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
@@ -115,8 +115,10 @@ function addCarStuff(card, listing) {
     }
 }
 
-
-GM_addStyle(".tmsp_shipping {font-size:11px; font-style: italic;}");
+function addStyle(style) {
+	$("<style>").prop("type", "text/css").html(style).appendTo("head");
+}
+addStyle(".tmsp_shipping {font-size:11px; font-style: italic;}");
 
 $("#ListViewList .listingCard").each(function(index, card){
     var auctionUrl = $(".listingTitle > a", card).attr('href');

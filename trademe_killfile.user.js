@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    2.8
+// @version    2.9
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
 // @include    http://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
@@ -9,15 +9,14 @@
 // @include    http://www.trademe.co.nz/Members/Logout.aspx*
 // @include    http://www.trademe.co.nz/MyTradeMe/Favourites.aspx?pv=3
 // @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
-// @grant      GM_getResourceURL
-// @grant      GM_registerMenuCommand
-// @grant      GM_addStyle
-// @grant      unsafeWindow
+// @require http://cdn.jsdelivr.net/jquery.jeditable/1.7.3/jquery.jeditable.js
+// @grant      none
 
 // @copyright  public domain
 // ==/UserScript==
 
 /* Changes:
+v2.9: changes for Greasemonkey 2.0, settings icon to replace GM_registerMenuCommand
 v2.8: external dependencies to comply with Greasyfork rules
 v2.7: work with changes to favorite sellers list
 v2.6: work with TradeMe changes to a couple of pages
@@ -53,8 +52,9 @@ window.onerror=function(msg, url, linenumber){
         return true;
             };
 
-var $ = unsafeWindow.jQuery;
-var jQuery = unsafeWindow.jQuery;
+function addStyle(style) {
+	$("<style>").prop("type", "text/css").html(style).appendTo("head");
+}
 
 // load this way so we don't need to have an extra jQuery in the required list for the jQuery plugins to work
 $.when(
@@ -74,7 +74,7 @@ var	note_delete_icon = "data:image/gif;base64,R0lGODlhFgAVAPcAAAAAAJmZmZ+fmL6/lu
 
 // Change the post to a blacklist bar, based on code contributed by "king1" on TM
 function blacklistBar(post) {
-    var poster = $(".MessageAuthor > a > b", post).text();
+    var poster = $(".nick", post).text();
     var postid = $(".MessageAuthor > small > span", post).text();
     
     var blacklistCode = $("<div>", {
@@ -219,7 +219,7 @@ function killPosts() {
 
 function decoratePosts() {
     // Hyperlink 9-digit auction numbers, only on child text nodes.
-    GM_addStyle(".tmkflink {text-decoration: underline;}");
+    addStyle(".tmkflink {text-decoration: underline;}");
     $("#MessageBoard .MessageBody > p").contents().each(function(index, text) {
         if (text.nodeType == 3) { 
             var auctionNoRegex = /\b([1-9]\d{8})\b/g;
@@ -267,7 +267,7 @@ function withBlacklist(blacklistFunc) {
 }
 
 function loadBlacklistAndKillPosts() {
-    GM_addStyle(settings.postKill.cssPost);
+    addStyle(settings.postKill.cssPost);
     withBlacklist(killPosts);
 }
 
@@ -286,7 +286,7 @@ function killThreads() {
 }
                           
 function loadBlacklistAndKillThreads() {
-    GM_addStyle(settings.threadKill.cssThread);
+    addStyle(settings.threadKill.cssThread);
     withBlacklist(killThreads);
 }
 
@@ -430,7 +430,7 @@ NoteEditor.prototype.addNewNoteAndEdit= function(positionSelector) {
 };
 
 function addNoteStyles() {
-        GM_addStyle(
+        addStyle(
             ".blacklistNoteIcon {float:left; margin-right:10px; cursor:pointer;}\
 .blacklistNote {clear:both; cursor:pointer; background-color:#FCFF91; width:500px;}\
 .blacklistNoteText {float:left; background-color:#FCFF91; max-width:415px; overflow:hidden;  margin-top:2px; padding:3px 10px 5px 5px;\
@@ -471,7 +471,7 @@ function addNotesToBlacklist() {
 function addNotesToSellers() {
     addNoteStyles();
     
-    GM_addStyle(
+    addStyle(
     ".blacklistNoteIcon {float:none; margin-right:10px; cursor:pointer;}\
 .blacklistNotePosition {margin-top:5px; margin-left:-4px;}");
     
@@ -516,6 +516,10 @@ function modifySearchBox() {
          text: "Mine", 
          class:"ResetSearchForm", 
          title:"Search all topics for my messages (Killfile script)"}));
+    // 	registerMenuCommand('TradeMe Killfile: Settings',openGMConfig);
+    $("<a href='javascript:void(0)' id='tmkfsettings' title='Trademe Killfile settings' style='margin-left:10px'><img src='http://drsr.site90.com/img/settings.png'/></a>")
+    	.appendTo(".reset-link");
+    $("#tmkfsettings").click(openGMConfig);
 }
 
 // convert dates in format used in Trademe search results to a JS date
@@ -643,7 +647,7 @@ function initSettings() {
 }
 
 function openGMConfig() {
-      
+    
     // Code included from GM_config Extender http://userscripts.org/scripts/review/50018
     GM_config.resizeFrame = function(wid,hei) {
         this.frame.style.width = wid;
@@ -661,7 +665,6 @@ function openGMConfig() {
 
 // ---------------------------------------------------------------------------------------
 function scriptMain() {
-	GM_registerMenuCommand('TradeMe Killfile: Settings',openGMConfig);
 
     initSettings();
     
