@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    2.9
+// @version    2.9.1
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
 // @include    http://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
@@ -55,15 +55,6 @@ window.onerror=function(msg, url, linenumber){
 function addStyle(style) {
 	$("<style>").prop("type", "text/css").html(style).appendTo("head");
 }
-
-// load this way so we don't need to have an extra jQuery in the required list for the jQuery plugins to work
-$.when(
-	$.ajax({
-  		url: "http://cdn.jsdelivr.net/jquery.jeditable/1.7.3/jquery.jeditable.js",
-  		dataType: "script",
-        cache: true
-	})    
-).done(scriptMain);
 
 // TODO make icons configurable?
 // trollface.png
@@ -701,3 +692,4 @@ function scriptMain() {
         sessionStorage.removeItem(USERNAME_STORAGE_ITEM);
     }
 }
+scriptMain();
