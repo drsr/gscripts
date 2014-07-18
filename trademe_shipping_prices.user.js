@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name       TradeMe shipping prices
 // @namespace  http://drsr/
-// @version    0.9.2
+// @version    0.9.3
 // @description  Show shipping price, seller, and other auction details on search results, and thumbnail image for non-gallery items
 // @include    http://www.trademe.co.nz/*
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==
+// v0.9.3: Don't run on property pages
 // v0.9.2: Changes for Greasemonkey 2.0
 // v0.9: TM moved the seller name
 // v0.8: Tweaks to car details in search results in cases where TM already provides them
@@ -118,6 +119,23 @@ function addCarStuff(card, listing) {
 function addStyle(style) {
 	$("<style>").prop("type", "text/css").html(style).appendTo("head");
 }
+
+function isPropertyPage() {
+	var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .category-listings-breadcrumbs a:first");
+	if (firstBreadCrumb.length == 0) {
+		// "Properties from this office" page
+		firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
+	}
+	var isPropertySearchResult = firstBreadCrumb.text().indexOf("Property") != -1;
+	return isPropertySearchResult;
+}
+
+
+if (isPropertyPage()) {
+    // script doesn't anything useful to the property pages and causes jQuery to fetch loads of images for some reason
+    return;
+}
+
 addStyle(".tmsp_shipping {font-size:11px; font-style: italic;}");
 
 $("#ListViewList .listingCard").each(function(index, card){

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
-// @version    1.1
+// @version    1.1.1
 // @description  Filter out listings that don't name a definite price in Real Estate search results. Works in List view only
 // @include    /http://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
@@ -26,7 +26,7 @@ var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(T
 // var KILL_PATTERN = /Price by negotiation/i;
 //-----------------------------------------------------------------------------------------------
 
-// v1.1 Greasemonkey 2.0 changes
+// v1.1, v1.1.1 Greasemonkey 2.0 changes
 // v1.0 work with "Properties from this office" page and category listing pages
 
 var KILLED_LISTING_STYLES = 
@@ -106,36 +106,40 @@ function addListingHeader() {
         // add after the "nnnn listings, showing n to n" para
         // there are two of these, one <div> and one <p>, with one hidden depending on browse or search mode
         $(".listing-count-holder").each(function(index, listingCount) {
-            var $listingCount = $(listingCount);
+			var $listingCount = $(listingCount);
             $listingCount.html($listingCount.text()+ ". " + killedListingCount + ' hidden listings, <a class="killToggle" title="listings hidden by TradeMe Real Estate Filter script" href="javascript:void(0)">show</a>');
         });
         $(".killToggle").click(toggleListingVisibility);
     }
 }
 
-// try to check for property search results as it sometimes fires on Motors search results
-// breadcrumb class is different for category listing page e.g.
-// http://www.trademe.co.nz/property/residential-property-for-sale/canterbury/christchurch-city
-var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .category-listings-breadcrumbs a:first");
-var priceColumnClass = ".listingPrice";
-if (firstBreadCrumb.length == 0) {
-    // "Properties from this office" page
-    firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
-    priceColumnClass = ".classifyCol";
+function scriptMain() {
+	// try to check for property search results as it sometimes fires on Motors search results
+	// breadcrumb class is different for category listing page e.g.
+	// http://www.trademe.co.nz/property/residential-property-for-sale/canterbury/christchurch-city
+	var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .category-listings-breadcrumbs a:first");
+	var priceColumnClass = ".listingPrice";
+	if (firstBreadCrumb.length == 0) {
+		// "Properties from this office" page
+		firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
+		priceColumnClass = ".classifyCol";
+	}
+	var isPropertySearchResult = firstBreadCrumb.text().indexOf("Property") != -1;
+	if (isPropertySearchResult) {
+		// Class for the price field is different in gallery view so this won't find anything
+		$(priceColumnClass).each(function(index, listingPrice) {
+			var price = listingPrice.textContent;
+			if (KILL_PATTERN.test(price) || !priceInsideRange(price)) {
+				
+			   $(listingPrice).closest(".listingCard").addClass("killedlisting hiddenlisting");
+				killedListingCount++;
+				
+			}});
+		
+		// TODO could kill ".super-features-container" if all prices inside (".super-feature-price") should be killed?
+		
+		addListingHeader();
+	}        
 }
-var isPropertySearchResult = firstBreadCrumb.text().indexOf("Property") != -1;
-if (isPropertySearchResult) {
-    // Class for the price field is different in gallery view so this won't find anything
-    $(priceColumnClass).each(function(index, listingPrice) {
-        var price = listingPrice.textContent;
-        if (KILL_PATTERN.test(price) || !priceInsideRange(price)) {
-            
-           $(listingPrice).closest(".listingCard").addClass("killedlisting hiddenlisting");
-            killedListingCount++;
-            
-        }});
-    
-    // TODO could kill ".super-features-container" if all prices inside (".super-feature-price") should be killed?
-    
-    addListingHeader();
-}        
+// wait for load as the TM page overwrites the "Showing n to n" header otherwise
+$(window).load(scriptMain);
