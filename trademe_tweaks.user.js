@@ -207,15 +207,19 @@ function tweakMap() {
             // console.log("Map not loaded yet");
             setTimeout(tweakMap, 2000);
         } else {
+            // mapState.userEnteredLocation only has the street address which can match more than one street in Google Maps
+            // add the rest of the full address from the map window
+            var restOfAddress = $("div.infowindow-address span").text();
             zoomIn.nextAll().remove();
-            zoomIn.replaceWith('<a target="_blank" href="https://maps.google.co.nz?q=' + 
+            zoomIn.replaceWith('<a target="_blank" href="https://maps.google.co.nz?ll=' + 
                                mapState.lat + ',' + mapState.lng +
+                               '&q='+escape(mapState.userEnteredLocation) + "," + restOfAddress +
                                '" title="Open Google Maps in a new window">Full map</a>' +
                                '&nbsp;|&nbsp;<a target="_blank" href="https://www.zoodle.co.nz/search?query=' +
                               escape(mapState.userEnteredLocation) +'" title="Search for this address in Zoodle">Zoodle</a>');
         }
     } else {
-        console.log("No mapState in page");
+        // console.log("No mapState in page");
     }
 }    
 
