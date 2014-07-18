@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Tweaks
 // @namespace  http://drsr/
-// @version    0.8.2
+// @version    0.9
 // @description  Tweak TradeMe page elements, including the main menu, header, footer, and sidebar, and maps
 // @include    http://www.trademe.co.nz/*
 //    exclude iframe on stuff.co.nz pages
@@ -9,13 +9,9 @@
 // @copyright  public domain
 // @run-at   document-end
 // @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
-// @grant GM_addStyle
-// @grant GM_getValue
-// @grant GM_log
-// @grant GM_registerMenuCommand
-// @grant GM_setValue
-// @grant unsafeWindow
+// @grant none
 // ==/UserScript==
+// v0.9: Greasemonkey 2.0 changes
 // v0.8: Click on either of the "Watching" buttons on a listing to remove it from the watchlist
 // v0.7: Option to hide other ads on sidebar (although AdBlock does this anyway), fix box width for quick links
 // v0.6: Wait for map to load before tweaking it
@@ -23,42 +19,45 @@
 // v0.4: Click the "Saved" button on a listing to remove it from the watchlist
 // v0.3: Change order of extra items on "My Trade Me" dropdown to match sidebar
 // v0.2: Add "Tweak My Trade Me dropdown menu items", adds "Blacklist" and "My Photos" to menu
-var myJQ = unsafeWindow.jQuery;
+
+function addStyle(style) {
+	$("<style>").prop("type", "text/css").html(style).appendTo("head");
+}
 var settings = {};
 function removeDropdowns() {
     // Remove dropdowns from top menu, just go straight to the pages
-    myJQ(".modal-open:not([class*='search-options'])").unbind("click");
-    // deleting the dropdown arrow span makes the buttons symmetrical but looks more jumpy: myJQ(".modal-open span").remove();
-    myJQ(".modal-open:not([class*='search-options']) span").css("background-image", "none"); // dropdown arrow
+    $(".modal-open:not([class*='search-options'])").unbind("click");
+    // deleting the dropdown arrow span makes the buttons symmetrical but looks more jumpy: $(".modal-open span").remove();
+    $(".modal-open:not([class*='search-options']) span").css("background-image", "none"); // dropdown arrow
     
     // Same for "My Trademe"
-    myJQ("#SiteHeader_SiteTabs_myTradeMeDropDownLink").unbind("click");
-    // myJQ(".mytrademe span").remove(); // dropdown arrow
-    myJQ(".mytrademe span").css("background-image", "none"); // dropdown arrow
+    $("#SiteHeader_SiteTabs_myTradeMeDropDownLink").unbind("click");
+    // $(".mytrademe span").remove(); // dropdown arrow
+    $(".mytrademe span").css("background-image", "none"); // dropdown arrow
 }
 function removeSidebarFeatures() {
     // remove unwanted sidebar features
     if (settings.hideSidebarOtherAds) {
-        myJQ("#lifeDirectForm_lifeDirectDiv").hide();
-        myJQ("#HomepageAdSpace").hide();
+        $("#lifeDirectForm_lifeDirectDiv").hide();
+        $("#HomepageAdSpace").hide();
     }
     if (settings.hideSidebarFindSomeone) {
-        myJQ(".sidebar-feature:not([id])").hide(); // "find someone"
+        $(".sidebar-feature:not([id])").hide(); // "find someone"
     }
     if (settings.hideSidebarTreatme) {       
-        myJQ("#treatMe_dailyDealsDiv").hide();
+        $("#treatMe_dailyDealsDiv").hide();
     }
     if (settings.hideSidebarTravelbug) {
-        myJQ("#travelbugDeals_dailyDealsDiv").hide();
+        $("#travelbugDeals_dailyDealsDiv").hide();
     }
 }
 function addQuickLinksToSidebar() {
-    if (myJQ("#sidebar_tmtw_QuickLinks").length > 0 || !settings.addQuicklinksToSidebar) {
+    if ($("#sidebar_tmtw_QuickLinks").length > 0 || !settings.addQuicklinksToSidebar) {
         return;
     }
     
     // TODO tweak layout, border?
-    GM_addStyle("\
+    addStyle("\
 .tmtw_ql h3 {\
 font: bold 16px Arial,Helvetica,Sans-serif;\
 color: #c60;\
@@ -68,7 +67,7 @@ padding: 3px 10px 0;\
 padding-left:2em;\
 }");
     
-    myJQ('.sidebar').prepend('\
+    $('.sidebar').prepend('\
 <div id="sidebar_tmtw_QuickLinks" class="old-box solid sidebar-feature" >\
 	<div class="inner">\
         <div class="bd tmtw_ql">\
@@ -99,11 +98,11 @@ padding-left:2em;\
 </div>');
 }
 function isHomePage() {
-    return (myJQ(".sidebar").length > 0);
+    return ($(".sidebar").length > 0);
 }
 function removeTopBar() {
     /* Hide the top nav bar, which is stretched out when Adblock is operational and when zoom is less than 100% */
-    myJQ(".sat-nav").hide();
+    $(".sat-nav").hide();
 }
 // --------------------------------------------------------------------------------------------
 function unsaveButton(evt) {
@@ -112,10 +111,10 @@ function unsaveButton(evt) {
     // Saved:
     //   class="SaveToWatchlistButton Saved spriteButton"
     var ret = false;
-    var saveButton = myJQ("#SaveToWatchlist_SaveToWatchlistButton");
-    var topSaveButton = myJQ("#ListingTitle_watchlistLink");
+    var saveButton = $("#SaveToWatchlist_SaveToWatchlistButton");
+    var topSaveButton = $("#ListingTitle_watchlistLink");
     if (saveButton.hasClass("Saved")) {
-        myJQ.ajax({
+        $.ajax({
             type: 'POST',
             url: '/MyTradeMe/WatchlistDelete.aspx',
             data: {
@@ -125,7 +124,7 @@ function unsaveButton(evt) {
                 "ref": "watchlist",
                 "auction_id": "0", /* actual IDs are in auction_list */
                 "offer_id": "",
-                "auction_list": unsafeWindow.listingId, /* Listing ID global from page */
+                "auction_list": window.listingId, /* Listing ID global from page */
                 "submit1": "Delete"
             },
             error: function(jqXHR, textStatus, errorThrown) {
@@ -137,14 +136,14 @@ function unsaveButton(evt) {
                 topSaveButton.children("span").attr("class", "watchlist-plus");
                 topSaveButton.contents()[1].textContent="Watchlist";
                 // these divs are generated hidden if the item is saved already
-                myJQ("#SaveToWatchlist_EmailReminder, #SaveToWatchlist_TextReminder").hide();
+                $("#SaveToWatchlist_EmailReminder, #SaveToWatchlist_TextReminder").hide();
                 // page global generated by TradeMe and used by TM click event
-                unsafeWindow.isSaved = false;
+                window.isSaved = false;
             }
         });
     } else {
         // call original TM click function (cheat by calling the bottom one even if the top one was clicked)
-        ret = unsafeWindow.BottomListingWatchlistButtonClick(evt);
+        ret = window.BottomListingWatchlistButtonClick(evt);
         // Make sure we still have the click captured and re-enable the top button
         tweakSavedButtonClicks();
         
@@ -153,20 +152,20 @@ function unsaveButton(evt) {
     return ret;
 }
 function tweakSavedButtonClicks() {
-    var saveButtons = myJQ("#SaveToWatchlist_SaveToWatchlistButton, #ListingTitle_watchlistLink");
+    var saveButtons = $("#SaveToWatchlist_SaveToWatchlistButton, #ListingTitle_watchlistLink");
     saveButtons.removeClass("btn-disabled");
     // replace click event, will chain to the original if it's not currently saved
     saveButtons.unbind().click(unsaveButton);
 }
 
 function tweakSavedButton() {
-    GM_addStyle(".SaveToWatchlistButton.Saved{cursor:pointer !important}");
+    addStyle(".SaveToWatchlistButton.Saved{cursor:pointer !important}");
     tweakSavedButtonClicks();
 }
 // --------------------------------------------------------------------------------------------
 function removeFooter() {
     /* Hide the grey site footer, which unnecessarily appears on every page and is way too big */
-    myJQ(".site-footer").hide();
+    $(".site-footer").hide();
 }
 function tweakBeforeLoad() {
     if (isHomePage()) {
@@ -190,9 +189,9 @@ function tweakBeforeLoad() {
 
 // Add extra links to "My Trade Me"
 function tweakMyTrademeDropdown() {
-    myJQ("#SiteHeader_SiteTabs_myTradeMeDropDownLink").click(function() {
-        myJQ("#mtm-selling ul:eq(1) li:eq(1)").replaceWith('<li><a href="/MyTradeMe/MyPhotos.aspx">My Photos</a></li>');
-        myJQ("#mtm-selling ul:eq(1) li:eq(1)").append('<li><a href="/MyTradeMe/BlackList.aspx">Blacklist</a></li>');        
+    $("#SiteHeader_SiteTabs_myTradeMeDropDownLink").click(function() {
+        $("#mtm-selling ul:eq(1) li:eq(1)").replaceWith('<li><a href="/MyTradeMe/MyPhotos.aspx">My Photos</a></li>');
+        $("#mtm-selling ul:eq(1) li:eq(1)").append('<li><a href="/MyTradeMe/BlackList.aspx">Blacklist</a></li>');        
     });
 }
 
@@ -201,9 +200,9 @@ function tweakMyTrademeDropdown() {
 // Also adds a link for Zoodle, to easily get school zones
 function tweakMap() {
     // mapState is a global in TM real estate pages
-    var mapState = unsafeWindow.mapState;
+    var mapState = window.mapState;
 	if (mapState && mapState.lat && mapState.lng) {
-        var zoomIn = myJQ('a:contains("Zoom in")');
+        var zoomIn = $('a:contains("Zoom in")');
         if (zoomIn.length == 0) {
             // console.log("Map not loaded yet");
             setTimeout(tweakMap, 2000);
@@ -222,7 +221,7 @@ function tweakMap() {
 
 function tweakAfterLoad() {
     if (settings.removeDropdowns) {
-        myJQ(unsafeWindow.document).unbind("ready");
+        $(window.document).unbind("ready");
         removeDropdowns();
     } else {
         if (settings.tweakMyTrademeDropdown) {
@@ -232,6 +231,16 @@ function tweakAfterLoad() {
     tweakSavedButton();
 
     tweakMap();
+    
+    addSettingsButton();
+}
+
+function addSettingsButton() {
+    $("<a href='javascript:void(0)' id='tmtwsettings' title='Trademe Tweaks settings' style='margin-left:10px'>" +
+      "<img width='16' height='16' title='' alt='' style='margin-bottom:-2px' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAD5UlEQVR4nGJkwAGam5u3MTIyejIwMDD8//9/e21trRc2dQAAAAD//2KBMRoaGgoYGRlj////39zQ0LDh////ht7e3gwMDAwMW7ZsMYSqiWVkZCz4////4oaGhgkMDAwMAAAAAP//YoRp5uPj6zc2NmY4f/48w/v373dxcXG5eXp6MjAwMDBs376d4du3b0cEBQVtDA0NGc6ePcvw6dOnwoaGhgkAAAAA//8EwTERwDAIQNGfu84YyMiKhISxLuKpomKDEQ1sXN97ALr7mBkigrsTEe+ck6oCYO9NZi5VZYyBmXHvPcD3AwAA//80zzERwAAMA7G/DoZhsoVnJN5CILlOFQM9fzkJbZkZbCOJ3eXukIRtZoa2JAF4AT4AAAD//zTQMRXAMAgFwB+W4oEJxKSeEICn1guZeGhg7NSTcOs/cPdHRLaqgpmRmaiqIaIlIpeZYWZwzkF3vxFxA8AHAAD//wBBAL7/AXh4eLb9/f0xCAgIGCwsLAAMDAwA4eHhAOTk5L6JiYlLAAAAAHd3d7UcHBxCHx8fAPT09ADU1NQA+Pj46AMDA88AAAD//wTBsQ3AMAgEwI9cYOg8CrNRsAPLMUo6ZAqU3D1m9qkqiAhVBWZGZt6IODNzAWCttd39VdVdVRARdDcyEz8AAAD//zzPwQkAMAgEsFO6hPtv5ssJ5EDUvtpskEMS7g5VhYjAzNDdv/ZUlWQmIgK7i5kBSVwAAAD//wTBsREAIAgAMe4bbWFNFvScBQbADiYwAbiZ+SJCqkq6W1R1ufsBNrDd/ZjZmhmpKokIycwH3A8AAP//gtuUmpq6/9+/fw4iIiIMKioqDM+fP2d48uTJTwYGBgYZGRl2SUlJhjt37jC8efOGgYmJ6eTs2bMtGBgYGAAAAAD//2JkYGBgKCoqCn3z5s0qGRkZhnfv3jFwcXExKCkpMbCzszMwMjLCQ//bt28MQkJCDE+ePGEQERFJ7uvrmwcAAAD//wTBsQ3AMAgAwS/S4QbJk2YBb5L1EELUxoVF7h4Ad19zTjKTvTcRgZkxxuDeyzmHqkJE6G5UFXd/ge8HAAD//wTBsQnAQAwEwcVcAeo//1YcOr8OhEB8JlDmmQcgIo5tMpOqQtJ372Vm2F26G0lvVZGZ2CYiDsAPAAD//wTBMRHAMAwDQJ2YaDCC7gVSAgURAEFgEGYUGPamMf8EgMzckhbJExF/VT22Z2bQ3bA9VfVGxEfySFqZuQHgAgAA//+CBSIzIyMjBxMTkwAjIyMvExOTgJ2d3awPHz7oQl145dChQxn/////9u/fv4//////8P///2//////CQAAAP//AwAvroSUkykoBQAAAABJRU5ErkJggg==' />"
+      +"</a>")
+    	.appendTo(".time");
+    $("#tmtwsettings").click(openGMConfig);
 }
 
 function initSettings() {
@@ -351,6 +360,6 @@ function openGMConfig() {
     
 }
 initSettings();
-GM_registerMenuCommand('TradeMe Tweaks: Settings',openGMConfig);
+// GM_registerMenuCommand('TradeMe Tweaks: Settings',openGMConfig);
 tweakBeforeLoad();
-myJQ(unsafeWindow).load(tweakAfterLoad);
+$(window).load(tweakAfterLoad);
