@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Tweaks
 // @namespace  http://drsr/
-// @version    0.9
+// @version    1.0
 // @description  Tweak TradeMe page elements, including the main menu, header, footer, and sidebar, and maps
 // @include    http://www.trademe.co.nz/*
 //    exclude iframe on stuff.co.nz pages
@@ -11,6 +11,7 @@
 // @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
 // @grant none
 // ==/UserScript==
+// v1.0: Full Map link now shows address
 // v0.9: Greasemonkey 2.0 changes
 // v0.8: Click on either of the "Watching" buttons on a listing to remove it from the watchlist
 // v0.7: Option to hide other ads on sidebar (although AdBlock does this anyway), fix box width for quick links
