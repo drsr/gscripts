@@ -1,21 +1,21 @@
 // ==UserScript==
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
-// @version    1.0
+// @version    1.1
 // @description  Filter out listings that don't name a definite price in Real Estate search results. Works in List view only
 // @include    /http://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
 // @include    http://www.trademe.co.nz/property/*
 // @include    http://www.trademe.co.nz/browse/property/regionlistings.aspx*
 // @include    http://www.trademe.co.nz/members/listings.aspx*
-// @grant      GM_addStyle
+// @grant      none
 // @copyright  public domain
 // ==/UserScript==
 
 
 //-----------------------------------------------------------------------------------------------
 // Listings with a "price" that matches this pattern will be hidden
-var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(Tender)/i;
+var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(Tender)|(Deadline private treaty)/i;
 
 // Some alternative kill patterns below, remove the "//" at the start of the line add a "//" before the other patterns to use them
 
@@ -26,36 +26,33 @@ var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(T
 // var KILL_PATTERN = /Price by negotiation/i;
 //-----------------------------------------------------------------------------------------------
 
-// Changes: 
-// v0.3 don't fire for non-realestate searches, add clickable link to show/hide
-// v0.4 fix search from favourites
-// v0.5 filter out prices that are under the minimum or over the maximum for the current search
-// v0.6 fix image viewer and other problems on listing view page in Firefox
-// v0.7 fix $million + properties always filtered
-// v0.8 Greasemonkey 1.0
-// v0.9 fix for TM CSS change
+// v1.1 Greasemonkey 2.0 changes
 // v1.0 work with "Properties from this office" page and category listing pages
 
 var KILLED_LISTING_STYLES = 
 ".killedlisting {background-color:#eeeeee !important; color: #999999 !important;}\
 .hiddenlisting {display:none !important;}";
 
-GM_addStyle(KILLED_LISTING_STYLES);
+function addStyle(style) {
+	$("<style>").prop("type", "text/css").html(style).appendTo("head");
+}
+addStyle(KILLED_LISTING_STYLES);
 
 // replace trademe's JS error handler
 window.onerror=function(msg, url, linenumber){
     if (msg.indexOf("Uncaught TypeError") < 0) { // caused by Adblock in Chrome I think
-//        console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
+        console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
     }
     return true;
 };
 
-var $ = unsafeWindow.jQuery; // noConflict doesn't work in Greasemonkey/Firefox
 var killedListingCount = 0;
 
 function toggleListingVisibility() {
     $(".killedlisting").toggleClass("hiddenlisting");
-    $("#killToggle").text($("#killToggle").text()==="show" ? "hide" : "show");
+    $(".killToggle").each(function(index, toggle) {
+        $(toggle).text($(toggle).text()==="show" ? "hide" : "show");
+    });
 }
 
 // keypress code borrowed from "Google reader tiny"
@@ -106,26 +103,13 @@ function priceInsideRange(price) {
 
 function addListingHeader() {
     if (killedListingCount > 0) {
-        // add under the "nnnn listings, showing n to n" para
-        var killedHeader = $('<p>' 
-                             + killedListingCount + ' hidden listings, <a id="killToggle" href="javascript:void(0)">show</a>');
-        
-        // IDs of header text div and para in search results mode
-        var listingText = $("#ListView_listingTableHeader_headerColumnListViewText");
-        var tableHeader = $("#ListView_listingTableHeader_headerColumnListView");
-        
-        if (listingText.length==0) {
-            // IDs are different in browse mode
-            listingText = $("#LV_listingTableHeader_headerColumnListViewText");
-            tableHeader = $("#LV_listingTableHeader_headerColumnListView");
-        }
-        
-        if (listingText.length>0) {
-            killedHeader.attr("style", listingText.attr("style"));
-            listingText.css("padding-bottom", "0px");
-            tableHeader.append(killedHeader);        
-            $("#killToggle").click(toggleListingVisibility);
-        }
+        // add after the "nnnn listings, showing n to n" para
+        // there are two of these, one <div> and one <p>, with one hidden depending on browse or search mode
+        $(".listing-count-holder").each(function(index, listingCount) {
+            var $listingCount = $(listingCount);
+            $listingCount.html($listingCount.text()+ ". " + killedListingCount + ' hidden listings, <a class="killToggle" title="listings hidden by TradeMe Real Estate Filter script" href="javascript:void(0)">show</a>');
+        });
+        $(".killToggle").click(toggleListingVisibility);
     }
 }
 
@@ -136,7 +120,7 @@ var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .c
 var priceColumnClass = ".listingPrice";
 if (firstBreadCrumb.length == 0) {
     // "Properties from this office" page
-    firstBreadCrumb = $("#BreadCrumbTrail_BreadcrumbsContainer a:first");
+    firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
     priceColumnClass = ".classifyCol";
 }
 var isPropertySearchResult = firstBreadCrumb.text().indexOf("Property") != -1;
