@@ -1,0 +1,1 @@
+These are Greasemonkey scripts. It's easiest to install them from my greasyfork author page at https://greasyfork.org/users/2373-drsr
