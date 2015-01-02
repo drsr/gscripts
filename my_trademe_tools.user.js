@@ -1,20 +1,16 @@
 // ==UserScript==
 // @name       My Trademe Tools
 // @namespace  http://drsr/
-// @version    0.1
+// @version    0.3
 // @description  Tweaks for My Trademe, especially watchlist notes
 // @include    http://www.trademe.co.nz/*
 //    exclude iframe on stuff.co.nz pages
 // @exclude    http://www.trademe.co.nz/iframe/*
 // @copyright  public domain
-// @grant		unsafeWindow
-// @grant		GM_addStyle
-// @grant      GM_getResourceURL
-// @resource   note_delete_left http://drsr.site90.com/img/note_delete_left.gif
+// @grant		none
 // ==/UserScript==
-
+// v0.3: show attributes from listing e.g. Location and Available for rental houses, car details for cars
 // TODO:
-//   Show note on auction details if saved
 //   On search results if saved button appears check watchlist for note and display
 //   Linkify within notes
 
@@ -23,8 +19,6 @@ window.onerror=function(msg, url, linenumber){
         return true;
             };
 
-var $ = unsafeWindow.$;
-var jQuery = unsafeWindow.jQuery;
 $.when(
 	$.ajax({
   		url: "http://drsr.site90.com/js/jquery.jeditable.1.7.2.dev.js",
@@ -53,6 +47,44 @@ function embiggenNotes() {
     });
 }
 
+
+function addInterestingAttributes() {
+    var attribsToFetch = ["Available", "Location", "Furnishings", "Parking", "Kilometres", "Engine size", "Engine", "Registration expires", "WOF expires"];
+	return $("tr[id*='row2']").each(function(index, watchlistRow) {
+        var auctionLink = "http://www.trademe.co.nz" + $("a:first", watchlistRow).attr("href");
+        $.get(auctionLink, function(listing) {
+            var listingAttribs = {};
+            $("[id^=ListingAttributes_AttributesRepeater]", listing).each(
+                function(index, attrib) {
+                    var attribName = $.trim(attrib.textContent).slice(0,-1);
+                    var attribText = $.trim($(attrib).next().text());
+                    if (attribName === "Location") {
+                        attribText = $(attrib).next().html();
+                    }
+                        
+                    listingAttribs[attribName]=attribText;
+                });
+            var interestingAttribs = [];
+            $.each(attribsToFetch, 
+                   function(index, attribName) { 
+                       if (listingAttribs[attribName]) {
+                           if (attribName==='Location') {
+                               var locationText = listingAttribs[attribName].split("<br>").slice(0,1).join(" ");
+                               interestingAttribs.push("Location: " + locationText);
+                           } else {
+                               interestingAttribs.push(attribName + ": " + listingAttribs[attribName]);
+                           }
+                       }
+                   });
+            if (interestingAttribs.length > 0) {
+                var descriptionLocation = $("div.note_spacer_class", watchlistRow);
+                // more or less the same style as the "Closes:" div
+                descriptionLocation.before('<div style="margin: 0px; width: 100%; padding-right: 1px; padding-left:0px;"><small>' + interestingAttribs.join(", ") + '</small></div>');
+            }
+        });
+	});
+}
+                                                
 var fromEditWatcher = false; // avoid recursive mutations from our changes
 function editWatcher(mutations) {
     if (!fromEditWatcher) {
@@ -100,7 +132,7 @@ Watchlist.prototype.readPage =
         var _watchlist = this; // jQuery each changes "this"
         // only have IDs rather than classes to identify rows:
         // id "row2n": checkbox, thumbnail, title link
-        // id "row3n": note
+        // id "row3n": note, or the "add note" link
         // "n" starts at 0
         $("tr[id*='row3']", watchlistPage).each(function(index, watchlistRow) {
             var thisItem = new WatchlistItem();
@@ -113,8 +145,8 @@ Watchlist.prototype.readPage =
         });
         
         this.morePages = ($("#mainContent a:contains('Next')", watchlistPage).length > 0);
-   };    
-    
+   };
+
 Watchlist.prototype.loadCurrentPage = function() {
         console.log("loadCurrentPage, pageCtr=" + this.pageCtr);
     	console.log(this);
@@ -180,7 +212,7 @@ function addNoteEditDiv(note, item) {
      myJQ(".delete", item).after(
 '<div class="watchlistNote watchlistNotePosition" id="' + note.id + '_ctr">\
     <div class="watchlistNoteDelete">\
-        <a class="watchlistNoteDeleteIcon" id="' + note.id + '_del" title="Delete this note"><img src="' + note_delete_icon +'"/></a>\
+        <a class="watchlistNoteDeleteIcon" id="' + note.id + '_del" title="Delete this note"><img src="http://drsr.site90.com/img/note_delete_left.gif"/></a>\
     </div>\
     <div class="watchlistNoteText" id="' + note.id + '_text">' + note.html() + '</div>\
 </div>');
@@ -235,9 +267,11 @@ function removeNoteAddIcon(note) {
     myJQ(note.jqPrefix + "_addicon").remove();
 }
 
-
+function addStyle(style) {
+	$("<style>").prop("type", "text/css").html(style).appendTo("head");
+}
 function initNotes() {
-        GM_addStyle(
+        addStyle(
    ".watchlistNoteIcon {float:left; margin-right:10px; cursor:pointer;}\
 .watchlistNote {clear:both; cursor:pointer; background-color:#FCFF91; width:500px;}\
 .watchlistNoteText {float:left; background-color:#FCFF91; max-width:415px; overflow:hidden; padding:3px 10px 5px 5px;\
@@ -245,8 +279,6 @@ border-top-right-radius:10px; border-bottom-right-radius:10px; font-size:11px; }
 .watchlistNoteEditable TEXTAREA { background-color:#FCFF91; font-size:11px;}\
 .watchlistNoteDelete {float:left;}\
 ");
-
-    note_delete_icon = GM_getResourceURL("note_delete_left");
 }
 
 // holder for the "Add note" icon
@@ -286,7 +318,7 @@ function addNotesToBlacklist() {
 function addNotesToSellers() {
 	initNotes();
     
-    GM_addStyle(
+    addStyle(
         ".watchlistNoteIcon {float:none; margin-right:10px; cursor:pointer;}\
 .watchlistNotePosition {margin-top:5px; margin-left:-4px;}");
     
@@ -300,25 +332,31 @@ function addNotesToSellers() {
 
 
 function showNotesOnItem() {
+    debugger;
     var saveButton = $("#SaveToWatchlist_SaveToWatchlistButton");
     if (saveButton.hasClass("Saved")) {
         // TODO could defer loading the watchlist till here
-        var wlItem = watchlist.getItem(unsafeWindow.listingId);
+        var wlItem = watchlist.getItem(window.listingId);
         if (wlItem && (wlItem.note.length > 0) ) {
             initNotes();
             $("#SaveToWatchlist_MessageWatchlistSaveInvalidAttempt").after("<div class='watchlistNote'>" + wlItem.note + "</div>");
         } else {
-            // add a Note link here
+            // TODO add a Note link here
             
         }
     }
 }
 
 function scriptMain() {
-    embiggenNotes();
-    watchForNoteEdits();
+ 	// Only show the notes if we're viewing a listing
     var trademePage = window.location.toString().toLowerCase();
     if (trademePage.indexOf("listing")>0) {
+        // on a listing page, show the notes
         withWatchlist(showNotesOnItem);
+    } else {
+        // on the main watchlist page
+        embiggenNotes();
+    	watchForNoteEdits();
+        addInterestingAttributes();
     }
 }
