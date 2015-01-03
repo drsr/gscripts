@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       My Trademe Tools
 // @namespace  http://drsr/
-// @version    0.4
+// @version    0.5
 // @description  Tweaks for My Trademe, especially watchlist notes
 // @include    http://www.trademe.co.nz/*
 //    exclude iframe on stuff.co.nz pages
@@ -9,6 +9,7 @@
 // @copyright  public domain
 // @grant		none
 // ==/UserScript==
+// v0.5: Fix for Firefox
 // v0.4: More real estate attributes
 // v0.3: show attributes from listing e.g. Location and Available for rental houses, car details for cars
 // TODO:
@@ -92,12 +93,7 @@ function editWatcher(mutations) {
 }
 
 function observeTree(selector, watchFunction) {
-    // TODO Firefox?
-	var MO = WebKitMutationObserver;
-    if (!MO) {
-    	MO = MutationObserver;
-	}
-    var observer = new MO(watchFunction);
+    var observer = new MutationObserver(watchFunction);
     observer.observe(document.querySelector(selector), {childList: true, subtree : true });
 }
 
