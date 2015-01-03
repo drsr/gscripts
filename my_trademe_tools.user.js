@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       My Trademe Tools
 // @namespace  http://drsr/
-// @version    0.3
+// @version    0.4
 // @description  Tweaks for My Trademe, especially watchlist notes
 // @include    http://www.trademe.co.nz/*
 //    exclude iframe on stuff.co.nz pages
@@ -9,6 +9,7 @@
 // @copyright  public domain
 // @grant		none
 // ==/UserScript==
+// v0.4: More real estate attributes
 // v0.3: show attributes from listing e.g. Location and Available for rental houses, car details for cars
 // TODO:
 //   On search results if saved button appears check watchlist for note and display
@@ -49,7 +50,7 @@ function embiggenNotes() {
 
 
 function addInterestingAttributes() {
-    var attribsToFetch = ["Available", "Location", "Furnishings", "Parking", "Kilometres", "Engine size", "Engine", "Registration expires", "WOF expires"];
+    var attribsToFetch = ["Available", "Location", "Furnishings", "Parking", "Rooms", "Floor area", "Land area", "Rateable value (RV)", "Kilometres", "Engine size", "Engine", "Registration expires", "WOF expires"];
 	return $("tr[id*='row2']").each(function(index, watchlistRow) {
         var auctionLink = "http://www.trademe.co.nz" + $("a:first", watchlistRow).attr("href");
         $.get(auctionLink, function(listing) {
@@ -57,12 +58,8 @@ function addInterestingAttributes() {
             $("[id^=ListingAttributes_AttributesRepeater]", listing).each(
                 function(index, attrib) {
                     var attribName = $.trim(attrib.textContent).slice(0,-1);
-                    var attribText = $.trim($(attrib).next().text());
-                    if (attribName === "Location") {
-                        attribText = $(attrib).next().html();
-                    }
-                        
-                    listingAttribs[attribName]=attribText;
+                    // use html() to retain formatting from m2 etc. 
+                    listingAttribs[attribName]=$.trim($(attrib).next().html());
                 });
             var interestingAttribs = [];
             $.each(attribsToFetch, 
@@ -128,7 +125,6 @@ Watchlist.prototype.extractParam =
 
 Watchlist.prototype.readPage = 
     function (watchlistPage) {
-        console.log("Readpage");
         var _watchlist = this; // jQuery each changes "this"
         // only have IDs rather than classes to identify rows:
         // id "row2n": checkbox, thumbnail, title link
@@ -141,22 +137,18 @@ Watchlist.prototype.readPage =
             thisItem.noteId = _watchlist.extractParam(noteLink, "note_id");
             thisItem.note = $(".note_label :input", watchlistRow).val();
             _watchlist.watchlist[thisItem.auctionId] = thisItem;
-            console.log(thisItem);
         });
         
         this.morePages = ($("#mainContent a:contains('Next')", watchlistPage).length > 0);
    };
 
 Watchlist.prototype.loadCurrentPage = function() {
-        console.log("loadCurrentPage, pageCtr=" + this.pageCtr);
-    	console.log(this);
         if (this.morePages) {
             // bind to set "this" to the Watchlist object
             var pageGet = $.get("http://www.trademe.co.nz/MyTradeMe/Buy/Watchlist.aspx?filter=all&page=" + this.pageCtr, this.readPage.bind(this));
             this.pageCtr++;
             $.when(pageGet).then(this.loadCurrentPage.bind(this)); // recurse; need to load one at a time to check for a next page, could load all at once from number links I guess
         } else {
-            console.log("no more pages");
             this.deferred.resolve();
         }
     };
