@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Google reminder
 // @namespace  http://drsr/
-// @version    0.2
+// @version    0.3
 // @description  Add a Google Calendar reminder link to Trademe auction pages
 // @include    /http:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /http:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
@@ -9,6 +9,7 @@
 // @grant      GM_addStyle
 // @copyright  public domain
 // ==/UserScript==
+// v0.3 work with new listing format
 
 var $ = unsafeWindow.jQuery;
 
@@ -21,9 +22,12 @@ window.onerror=function(msg, url, linenumber){
 function getCloseDateTime() {
     var closeDateTime = null;
     // format of closing time is "Closes: Sat 16 Jun, 3:05 pm." and optionally " This auction may auto-extend"
-    var closing = $("#BidBuyNow_closingContainer").text();
+    // doesn't work for periods less than one day where time is e.g. "4 hours", but not really worth a GCAL reminder then
+    var closing = $("#BidBuyNow_closingContainer,#ClosingTime_ClosingTimeContainer").text();
+    debugger;
     if (closing && closing.indexOf("Closes:") > -1) {
         // get just date and time without dayname but including am/pm
+        closing = $.trim(closing)+"."; // extra dot for new format
         var closeTime = /Closes:\s+\w+\s+(.*m)\..*/.exec(closing);
         if (closeTime) {
             closeTime = closeTime[1];
@@ -56,7 +60,7 @@ function dateToUTCString(d) {
 }
 
 function addReminderLink(reminderTime) {
-    var auctionTitle = $("#ListingTitle_title").text().trim();
+    var auctionTitle = $("#ListingTitle_title,#ListingTitleBox_TitleText").text().trim();
 
     var utcDate = dateToUTCString(reminderTime);
 
@@ -70,7 +74,7 @@ function addReminderLink(reminderTime) {
 
     GM_addStyle(".tmgr_addToGoogle {padding-top:5px;}");
     // TODO better layout
-    $("#SaveToWatchlist_SaveToWatchlistButton")
+    $("#SaveToWatchlist_SaveToWatchlistButton,#ClosingTime_ClosingTimeContainer")
         .after('<div id="tmgr_addToGoogle" class="tmgr_addToGoogle">' + 
                    '<a href="' + reminderLink + '">' +
                        '<img src="http://www.google.com/calendar/images/ext/gc_button2.gif">' +
