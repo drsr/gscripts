@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    3.0
+// @version    3.0.1
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
 // @include    https://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
@@ -10,12 +10,17 @@
 // @include    https://www.trademe.co.nz/MyTradeMe/Favourites.aspx?pv=3
 // @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
 // @require http://cdn.jsdelivr.net/jquery.jeditable/1.7.3/jquery.jeditable.js
-// @grant      GM_xmlhttpRequest
+// @grant       GM_xmlhttpRequest
+// @grant		GM_setValue
+// @grant		GM_getValue
+// @grant		GM_deleteValue
+// @grant		GM_log
 
 // @copyright  public domain
 // ==/UserScript==
 
 /* Changes:
+v3.0.1: "Add to blacklist" link on store pages, fix blacklist note data for https change
 v3.0: handle move of the MyTrademe pages to https
 v2.9: changes for Greasemonkey 2.0, settings icon to replace GM_registerMenuCommand
 v2.8: external dependencies to comply with Greasyfork rules
@@ -268,7 +273,9 @@ function loadBlacklistAndKillThreads() {
 }
 
 function addBlacklistLink(params, content) {
-    $("#mainContent h3:first").after("<p style='margin-top:-5px; margin-bottom:7px'><a href='/MyTradeMe/BlackList.aspx?" + params + 
+    // after username/feedback count, or store header if user has a store
+    $("#mainContent h3:first,#StoreDetailsHeader_MemberNavigationDiv")
+		.after("<p style='margin-top:-5px; margin-bottom:7px'><a href='/MyTradeMe/BlackList.aspx?" + params + 
                                "' id='blacklistLink' title='This link was added by the TradeMe Killfile script'>" + 
                                content + "</a></p>");
 }
@@ -296,9 +303,9 @@ function BlacklistNote(memberName) {
     this.text = null;
 	this.load();
 }    
-BlacklistNote.prototype.load = function() { this.text = localStorage.getItem(this.id); return this.text; };
-BlacklistNote.prototype.save = function() { localStorage.setItem(this.id, this.text); };
-BlacklistNote.prototype.remove = function() { localStorage.removeItem(this.id); this.text = null;};
+BlacklistNote.prototype.load = function() { this.text = GM_getValue(this.id); return this.text; };
+BlacklistNote.prototype.save = function() { GM_setValue(this.id, this.text); };
+BlacklistNote.prototype.remove = function() { GM_deleteValue(this.id); this.text = null;};
 BlacklistNote.prototype.defaultText = function() { return this.text || ' '; };
 BlacklistNote.prototype.html = function() {
 	// TODO linkify links and auction numbers
@@ -645,12 +652,31 @@ function openGMConfig() {
     // TODO Tampermonkey leaves the settings menu open on top of this frame, why?
 }
 
+// Unfortunately TM's move of the blacklist page to https marooned the notes that were in http localStorage
+// Move them to GM storage which is global for the script
+function migrateNotes() {
+    if (!localStorage.getItem("tmkfMigr")) {
+        for (var noteKey in localStorage) {
+            if (noteKey.indexOf("tmkfbl")==0) {
+                GM_setValue(noteKey, localStorage.getItem(noteKey));
+            }
+        }
+        // don't do this again
+        localStorage.setItem("tmkfMigr","Y");
+    }
+}
 // ---------------------------------------------------------------------------------------
 function scriptMain() {
 
     initSettings();
     
     var trademePage = window.location.toString().toLowerCase();
+    
+    // auto-migrate on first http page visited
+    if (trademePage.indexOf("https") != 0) {
+        migrateNotes();
+    }
+    // migrate pre v3.0.1 blacklist
     if (trademePage.indexOf("blacklist")>0) {
         // clear the cached blacklist when the blacklist update page is visited
         clearBlacklist();
