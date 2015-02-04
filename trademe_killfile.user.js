@@ -1,42 +1,26 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    2.9.2
+// @version    3.0
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
-// @include    http://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
+// @include    https://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
 // @include    http://www.trademe.co.nz/Members/Listings.aspx*
 // @include    http://www.trademe.co.nz/Members/Logout.aspx*
-// @include    http://www.trademe.co.nz/MyTradeMe/Favourites.aspx?pv=3
+// @include    https://www.trademe.co.nz/MyTradeMe/Favourites.aspx?pv=3
 // @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
 // @require http://cdn.jsdelivr.net/jquery.jeditable/1.7.3/jquery.jeditable.js
-// @grant      none
+// @grant      GM_xmlhttpRequest
 
 // @copyright  public domain
 // ==/UserScript==
 
 /* Changes:
+v3.0: handle move of the MyTrademe pages to https
 v2.9: changes for Greasemonkey 2.0, settings icon to replace GM_registerMenuCommand
 v2.8: external dependencies to comply with Greasyfork rules
 v2.7: work with changes to favorite sellers list
-v2.6: work with TradeMe changes to a couple of pages
-v2.5: gave up on free hosting, all resources inline now
-v2.4: make killed threads a bit greyer, faster JS loading, don't load extra jQuery
-v2.3: add notes to sellers in Favourites too
-v2.2: fix blacklist bar icon height for new look CSS, make auction links in messages underlined
-v2.1: add grants for Greasemonkey 1.0
-v2.0:
- * Added settings dialog
- * New "Blacklist bar" option by TM poster "king1"
- * Click on greyed text to show original
- * Change greyed text to "herp derp" (idea from www.tannr.com/herp-derp-youtube-comments)
- * Change killed post icon to trollface
- * New "hidden" option for messages and threads
-
-v1.0:
- * Add "Mine" link to the search box to search for your username in all topics. When this link is used,
-   sort the search results in descending order of last message time. Normally they are sorted
-   by relevance, and the "Newest first" option sorts by the time of your posts, not the last message time.
+Thanks to TM user "king1" for the Blacklist Bar code.
 */
 
 
@@ -231,18 +215,20 @@ function clearBlacklist() {
 // If the blacklist isn't cached the function will only fire after the blacklist page is loaded
 function withBlacklist(blacklistFunc) {
     var cachedBlacklist = sessionStorage.getItem(BLACKLIST_STORAGE_ITEM);
-    if (cachedBlacklist) {
+    if (cachedBlacklist && cachedBlacklist != "{}") {
 
         blackList = JSON.parse(cachedBlacklist);
         // blackList.__proto__ = null; // just in case there's a user called "constructor"
         blacklistFunc();
         
     } else {
-        
-        // Chrome caches get() so add unique param
-        $.get("http://www.trademe.co.nz/MyTradeMe/BlackList.aspx?unique=" + new Date().getTime(),
+        // can't use $.get() due to same-origin policy
+        GM_xmlhttpRequest({
+  			method: "GET",
+  			url: "https://www.trademe.co.nz/MyTradeMe/BlackList.aspx?unique=" + new Date().getTime(),
+  			onload:
               function(data) {
-                  $("#theList .nick > a", data).each(function(index, atag) {
+                  $("#theList .nick > a", data.responseText).each(function(index, atag) {
                       // href is "/Members/Listings.aspx?member=nnnnnnn
                       var memberId = atag.href.split("member=")[1];
                       if (atag.text!=='__proto__') { // would override the object's prototype
@@ -253,7 +239,7 @@ function withBlacklist(blacklistFunc) {
                   sessionStorage.setItem(BLACKLIST_STORAGE_ITEM, JSON.stringify(blackList));
                   
                   blacklistFunc();
-              });
+              }});
     }
 }
 
@@ -476,12 +462,15 @@ function addNotesToSellers() {
 
 function withUsername(usernameFunc) {
     var userName = sessionStorage.getItem(USERNAME_STORAGE_ITEM);
-    if (!userName) {
-        var myTrademePage = $.get("/MyTradeMe/Default.aspx", function(data) {
-            userName = $('#MemberLink', data).text();
-            sessionStorage.setItem(USERNAME_STORAGE_ITEM, userName);
-            usernameFunc(userName);
-        });
+    if (!userName || userName=="") {
+        GM_xmlhttpRequest({
+  			method: "GET",
+            url: "https://www.trademe.co.nz/MyTradeMe/Default.aspx",
+  			onload: function(data) {
+                userName = $('#MemberLink', data.responseText).text();
+                sessionStorage.setItem(USERNAME_STORAGE_ITEM, userName);
+                usernameFunc(userName);
+            }});
     } else {
         usernameFunc(userName);
     }
