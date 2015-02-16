@@ -1,14 +1,17 @@
 // ==UserScript==
 // @name       My Trademe Tools
 // @namespace  http://drsr/
-// @version    0.5
+// @version    0.6
 // @description  Tweaks for My Trademe, especially watchlist notes
 // @include    http://www.trademe.co.nz/*
+// @include    https://www.trademe.co.nz/MyTradeMe/*
 //    exclude iframe on stuff.co.nz pages
 // @exclude    http://www.trademe.co.nz/iframe/*
 // @copyright  public domain
-// @grant		none
+// @grant		GM_xmlhttpRequest
+// @grant		unsafeWindow
 // ==/UserScript==
+// v0.6: Fix for TM watchlist moved to https (probably Chrome only)
 // v0.5: Fix for Firefox
 // v0.4: More real estate attributes
 // v0.3: show attributes from listing e.g. Location and Available for rental houses, car details for cars
@@ -23,7 +26,7 @@ window.onerror=function(msg, url, linenumber){
 
 $.when(
 	$.ajax({
-  		url: "http://drsr.site90.com/js/jquery.jeditable.1.7.2.dev.js",
+        url: "https://cdnjs.cloudflare.com/ajax/libs/jeditable.js/1.7.3/jeditable.min.js",
   		dataType: "script",
         cache: true
 	})    
@@ -54,32 +57,37 @@ function addInterestingAttributes() {
     var attribsToFetch = ["Available", "Location", "Furnishings", "Parking", "Rooms", "Floor area", "Land area", "Rateable value (RV)", "Kilometres", "Engine size", "Engine", "Registration expires", "WOF expires"];
 	return $("tr[id*='row2']").each(function(index, watchlistRow) {
         var auctionLink = "http://www.trademe.co.nz" + $("a:first", watchlistRow).attr("href");
-        $.get(auctionLink, function(listing) {
-            var listingAttribs = {};
-            $("[id^=ListingAttributes_AttributesRepeater]", listing).each(
-                function(index, attrib) {
-                    var attribName = $.trim(attrib.textContent).slice(0,-1);
-                    // use html() to retain formatting from m2 etc. 
-                    listingAttribs[attribName]=$.trim($(attrib).next().html());
-                });
-            var interestingAttribs = [];
-            $.each(attribsToFetch, 
-                   function(index, attribName) { 
-                       if (listingAttribs[attribName]) {
-                           if (attribName==='Location') {
-                               var locationText = listingAttribs[attribName].split("<br>").slice(0,1).join(" ");
-                               interestingAttribs.push("Location: " + locationText);
-                           } else {
-                               interestingAttribs.push(attribName + ": " + listingAttribs[attribName]);
+        // can't use $.get() due to same-origin policy
+        GM_xmlhttpRequest({
+  			method: "GET",
+  			url: auctionLink,
+  			onload: function(responseText) {
+                var listing = responseText.response;
+                var listingAttribs = {};
+                $("[id^=ListingAttributes_AttributesRepeater]", listing).each(
+                    function(index, attrib) {
+                        var attribName = $.trim(attrib.textContent).slice(0,-1);
+                        // use html() to retain formatting from m2 etc. 
+                        listingAttribs[attribName]=$.trim($(attrib).next().html());
+                    });
+                var interestingAttribs = [];
+                $.each(attribsToFetch, 
+                       function(index, attribName) { 
+                           if (listingAttribs[attribName]) {
+                               if (attribName==='Location') {
+                                   var locationText = listingAttribs[attribName].split("<br>").slice(0,1).join(" ");
+                                   interestingAttribs.push("Location: " + locationText);
+                               } else {
+                                   interestingAttribs.push(attribName + ": " + listingAttribs[attribName]);
+                               }
                            }
-                       }
-                   });
-            if (interestingAttribs.length > 0) {
-                var descriptionLocation = $("div.note_spacer_class", watchlistRow);
-                // more or less the same style as the "Closes:" div
-                descriptionLocation.before('<div style="margin: 0px; width: 100%; padding-right: 1px; padding-left:0px;"><small>' + interestingAttribs.join(", ") + '</small></div>');
-            }
-        });
+                       });
+                if (interestingAttribs.length > 0) {
+                    var descriptionLocation = $("div.note_spacer_class", watchlistRow);
+                    // more or less the same style as the "Closes:" div
+                    descriptionLocation.before('<div style="margin: 0px; width: 100%; padding-right: 1px; padding-left:0px;"><small>' + interestingAttribs.join(", ") + '</small></div>');
+                }
+            }});
 	});
 }
                                                 
@@ -139,15 +147,25 @@ Watchlist.prototype.readPage =
    };
 
 Watchlist.prototype.loadCurrentPage = function() {
-        if (this.morePages) {
-            // bind to set "this" to the Watchlist object
-            var pageGet = $.get("http://www.trademe.co.nz/MyTradeMe/Buy/Watchlist.aspx?filter=all&page=" + this.pageCtr, this.readPage.bind(this));
-            this.pageCtr++;
-            $.when(pageGet).then(this.loadCurrentPage.bind(this)); // recurse; need to load one at a time to check for a next page, could load all at once from number links I guess
-        } else {
-            this.deferred.resolve();
-        }
-    };
+    var pageDeferred = $.Deferred();
+    var wlThis = this;
+    if (this.morePages) {
+        // can't use $.get due to https
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: "https://www.trademe.co.nz/MyTradeMe/Buy/Watchlist.aspx?filter=all&page=" + this.pageCtr, 
+            onload: function(responseText) {
+                var wlPage = responseText.response;
+                wlThis.readPage(wlPage);
+                pageDeferred.resolve();
+            }});
+      	this.pageCtr++;
+        $.when(pageDeferred).then(this.loadCurrentPage.bind(this)); // recurse; need to load one at a time to check for a next page, could load all at once from number links I guess
+    } else {
+        // whole watchlist load complete
+       this.deferred.resolve();
+    }
+};
     
 Watchlist.prototype.load = function() {
         this.pageCtr = 1;
@@ -186,7 +204,11 @@ WatchlistNote.prototype.save = function() {
 };
 
 WatchlistNote.prototype.defaultText = function() { return (this.getNote() ? this.getNote() : ' '); };
-    
+
+// note_delete_left.png
+WatchlistNote.prototype.noteDeleteLeftIcon = 
+	"data:image/gif;base64,R0lGODlhFgAVAPcAAAAAAJmZmZ+fmL6/luPlk+Tmk/Dykvz/kf///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAP8ALAAAAAAWABUAAAiAAP8JHEjwgMGDCA0SFJiwYcKCDiMqZChRIsWKEf85NDBAQAABAww41JiQgMcAKD8SwHjAwMmUKAWIrDgAJYKUNwMMwPjyZs6PGGEG+ImSJ86hKQVgrInUJsqdFV0KjTmzYoGXMQs0JJmQo0eQVRFyZbl1LNmDA88+TKt2IsSzAQEAOw==";
+
 WatchlistNote.prototype.html = function() {
         // TODO linkify links and auction numbers
         return this.defaultText().replace(/\n/g,"<br/>");
@@ -200,7 +222,7 @@ function addNoteEditDiv(note, item) {
      myJQ(".delete", item).after(
 '<div class="watchlistNote watchlistNotePosition" id="' + note.id + '_ctr">\
     <div class="watchlistNoteDelete">\
-        <a class="watchlistNoteDeleteIcon" id="' + note.id + '_del" title="Delete this note"><img src="http://drsr.site90.com/img/note_delete_left.gif"/></a>\
+        <a class="watchlistNoteDeleteIcon" id="' + note.id + '_del" title="Delete this note"><img src="' + this.noteDeleteLeftIcon + '"/></a>\
     </div>\
     <div class="watchlistNoteText" id="' + note.id + '_text">' + note.html() + '</div>\
 </div>');
@@ -320,11 +342,10 @@ function addNotesToSellers() {
 
 
 function showNotesOnItem() {
-    debugger;
     var saveButton = $("#SaveToWatchlist_SaveToWatchlistButton");
     if (saveButton.hasClass("Saved")) {
         // TODO could defer loading the watchlist till here
-        var wlItem = watchlist.getItem(window.listingId);
+        var wlItem = watchlist.getItem(unsafeWindow.listingId);
         if (wlItem && (wlItem.note.length > 0) ) {
             initNotes();
             $("#SaveToWatchlist_MessageWatchlistSaveInvalidAttempt").after("<div class='watchlistNote'>" + wlItem.note + "</div>");
