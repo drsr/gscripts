@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos
 // @namespace  http://drsr/
-// @version    0.7
+// @version    0.8
 // @description  Show all the large photos on a listing
 // @include    /http:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /http:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
@@ -14,6 +14,7 @@
 // @require    https://greasyfork.org/scripts/2723-bpopup/code/bPopup.js?version=7539
 // @resource   grey_pixel http://drsr.site90.com/img/grey.gif
 // ==/UserScript==
+// v0.8: update for new listing format
 // v0.7: external bPopup to comply with greasyfork rules
 // v0.6: fix for new large image URLs, don't show link when there's only one photo
 // v0.5: when browser window is resized or maximized, recentre and adjust number of columns
@@ -117,40 +118,67 @@ var IMAGE_HEIGHT_PADDING = 4;
 var SCROLLER_TOP_MARGIN = 20;
 var SCROLLER_LEFT_MARGIN = 20;
 
+
 // max image dimensions for the current category, images may be (much) smaller
 function imageDimensions() {
-    if (unsafeWindow.isProperty) { // flag in real estate pages
-        return {width:800, height:600, cellClass:"tmsatp_largerCell"};
+    if (myJQ("#Photobox_OtherPhotos")) {
+        // new format, calculate max of data-photo-max-size width and height
+        var maxWidth = 1;
+        var maxHeight = 1;
+        myJQ("#Photobox_thumbs li").each(function(index, value) {
+            var photoMaxSize = myJQ(value).attr("data-photo-max-size");
+            if (photoMaxSize) {
+                photoWidth = 0+photoMaxSize.split(",")[0];
+                photoHeight = 0+photoMaxSize.split(",")[1];
+                maxWidth = Math.max(maxWidth, photoWidth);
+                maxHeight = Math.max(maxHeight, photoHeight);
+            }
+        });
+        return {width:maxWidth, heigh:maxHeight, cellClass:"tmsatp_largerCell"};
     } else {
-        return {width:669, height:502, cellClass:"tmsatp_smallerCell"};
+        // old format, always assume 800x600 max
+        return {width:800, height:600, cellClass:"tmsatp_largerCell"};
     }
 }
 
 // calculate URL for large image from thumbnail <img>
 function imageLargeUrl(img) {
     var retUrl;
-    // thumbnail link has class "lbt_nnnnn"
-    var imageId = myJQ(img).parent().attr("class").substring(4);
-
-    // Unbelievably this is what TM does in their own script, comparing the current image ID to the ID where they started storing the images in a new path.
-    var isNewImage = (unsafeWindow.photoStartIdNewDir ? unsafeWindow.photoStartIdNewDir > imageId : false);
-    if (isNewImage) {
-        retUrl = img.src.replace("/thumb", "").replace(".jpg", "_full.jpg");
+    
+    // try new photobox format first, parent LI has a data-photo-id attribute
+    var imageId = myJQ(img).parent().attr("data-photo-id");
+    if (imageId) {
+        // TODO the "plus" image still appears to exist even if there is no zoom box, any exceptions?
+        retUrl = myJQ("#Photobox_PhotoserverPlusUrlString").attr("value") + imageId + ".jpg";
     } else {
-        retUrl = img.src.replace("/thumb", "/full");
+        // old format
+        // thumbnail link has class "lbt_nnnnn"
+        var imageId = myJQ(img).parent().attr("class").substring(4);
+
+        // TODO is "photoStartIdNewDir" still used in the old-format listings? 
+        // This is what TM does in their own script, comparing the current image ID to the ID where they started storing the images in a new path.
+        var isNewImage = (unsafeWindow.photoStartIdNewDir ? unsafeWindow.photoStartIdNewDir > imageId : false);
+        if (isNewImage) {
+            retUrl = img.src.replace("/thumb", "").replace(".jpg", "_full.jpg");
+        } else {
+            retUrl = img.src.replace("/thumb", "/full");
+        }
     }
+    console.log(retUrl);
     return retUrl;
 }
 
 function genImages() {
     // Get all the lightbox thumbs
-    var allImages = myJQ(".lbThumb img");
+    var allImages = myJQ(".lbThumb img,#Photobox_thumbs img");
 	var imageCount = allImages.length;
     
     var dimensions = imageDimensions();
     var padded = {width: dimensions.width + IMAGE_WIDTH_PADDING, height: dimensions.height + IMAGE_HEIGHT_PADDING};
     
 	var jqWindow = myJQ(window);
+    
+    // TODO if the images are > 800 wide as can happen with the new format, get horizontal scrolling, is this necessarily a bad thing?
 	var columns = ((jqWindow.width() > (padded.width*2 + SCROLLER_LEFT_MARGIN)) && imageCount > 2) ? 2 : 1;
 
     var grey_pixel = GM_getResourceURL("grey_pixel");
@@ -260,13 +288,16 @@ function showAllThePhotos() {
     });
 }
 
-// Only show "all photos" link if there's more than 1 photo
-if (myJQ(".lbThumb img").length > 1) { 
-    myJQ("#viewFullSize").after(myJQ("<a />", 
+// Only show "all photos" link if there's more than 1 photo (2nd path is for new photobox format)
+if (myJQ(".lbThumb img,#Photobox_thumbs li").length > 1) { 
+    // second path is for new photobox format, present even if only one photo
+    myJQ("#viewFullSize,#pager").after(myJQ("<a />", 
         {id: "showallthephotos",
          href: "javascript:void(0)",
          title: "View all the full size photos (Greasemonkey script)",
          text: "View all photos",
          click: showAllThePhotos}))
         .after("<br />");
-}
+    
+}//    http://www.trademe.co.nz/clothing-fashion/men/jackets/auction-877115196.htm
+
