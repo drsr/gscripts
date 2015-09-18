@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    3.0.1
+// @version    3.0.2
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
 // @include    http://www.trademe.co.nz/Community/MessageBoard/*
 // @include    https://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
@@ -20,6 +20,7 @@
 // ==/UserScript==
 
 /* Changes:
+v3.0.2: Fix cached blacklist not clearing when user added or removed
 v3.0.1: "Add to blacklist" link on store pages, fix blacklist note data for https change
 v3.0: handle move of the MyTrademe pages to https
 v2.9: changes for Greasemonkey 2.0, settings icon to replace GM_registerMenuCommand
@@ -272,12 +273,29 @@ function loadBlacklistAndKillThreads() {
     withBlacklist(killThreads);
 }
 
+// Add link to add or remove user from blacklist
+// Have to clear the cached blacklist in localStorage before going to the blacklist page because
+// blacklist page is secure so has separate localStorage
 function addBlacklistLink(params, content) {
     // after username/feedback count, or store header if user has a store
+    var blacklistLinkCode = $("<p>", {
+        "style": "margin-top:-5px; margin-bottom:7px"})
+        .html(
+            $("<a>", {
+                "href": "javascript:void(0)",
+                "click": function() {
+                    clearBlacklist();
+                    window.location.href='/MyTradeMe/BlackList.aspx?' + params;
+                },
+                "id":  "blacklistLink",
+                "title": "This link was added by the TradeMe Killfile script", 
+                "text": content
+            }
+            )
+        );
+
     $("#mainContent h3:first,#StoreDetailsHeader_MemberNavigationDiv")
-		.after("<p style='margin-top:-5px; margin-bottom:7px'><a href='/MyTradeMe/BlackList.aspx?" + params + 
-                               "' id='blacklistLink' title='This link was added by the TradeMe Killfile script'>" + 
-                               content + "</a></p>");
+		.after(blacklistLinkCode);
 }
 
 function blacklistWithNewNote(userName) {
