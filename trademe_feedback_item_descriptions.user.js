@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       Trademe feedback item descriptions
 // @namespace  http://drsr/
-// @version    1.0
+// @version    1.1
 // @description  Adds auction item description and price (where available) to feedback listing
 // @include    http://www.trademe.co.nz/Members/Feedback.aspx*
 // @include    /http:\/\/www.trademe.co.nz\/stores\/.*\/feedback/
@@ -10,6 +10,7 @@
 // ==/UserScript==
 /*
 * Changes:
+* v1.1 New auction page layout
 * v1.0 Greasemonkey 2.0
 * v0.9 Avoid double item descriptions from feedback filter script
 * v0.8 Fix for more stores
@@ -49,8 +50,9 @@ function queueNext(delay) {
 var ITEM_DONE_MARKER = "tmfbid_done";
 function getListing(listingItem) {
     $.get(listingItem.auctionUrl, function(listing) {
-        var auctionTitle = $("#ListingTitle_title", listing).text();
-        var winningBid = $("#ListingTitle_auctionTitleBids", listing).text();
+        // Selectors are in old format, new format order
+        var auctionTitle = $("#ListingTitle_title,#ListingTitleBox_TitleText", listing).text();
+        var winningBid = $("#ListingTitle_auctionTitleBids,.current-bid-details-closed", listing).text();
         var breadCrumbs = $(".listingBreadCrumbs", listing).html();
         var $feedbackItem = $(listingItem.feedbackItem);
         // Check the "Trademe feedback filter hasn't added a description while we were getting this page
