@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
-// @version    1.1.1
+// @version    1.1.2
 // @description  Filter out listings that don't name a definite price in Real Estate search results. Works in List view only
 // @include    /http://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
@@ -26,6 +26,7 @@ var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(T
 // var KILL_PATTERN = /Price by negotiation/i;
 //-----------------------------------------------------------------------------------------------
 
+// v1.1.2 Trademe changed class for listing price
 // v1.1, v1.1.1 Greasemonkey 2.0 changes
 // v1.0 work with "Properties from this office" page and category listing pages
 
@@ -78,11 +79,6 @@ function REF_key(event) {
  }
 document.addEventListener("keydown", REF_key, false);
 
-// get the max and min prices from the search form 
-// values for "Any" = 0, "2M+" = 2000000
-var maxPrice = parseInt($("#max-49").val());
-var minPrice = parseInt($("#min-49").val());
-
 function priceInsideRange(price) {
     if (price.indexOf('$')<0) {
         return true;
@@ -94,6 +90,10 @@ function priceInsideRange(price) {
         numericPrice *= 1000;
     }
 
+    // get the max and min prices from the search form 
+    // values for "Any" = 0, "2M+" = 2000000
+    var maxPrice = parseInt($("#max-49").val());
+    var minPrice = parseInt($("#min-49").val());   
     // check for 2 million because this search form option is actually 2 million plus so doesn't count as a max
     var insideMax =  maxPrice <= 0 || maxPrice == 2000000 || numericPrice <= maxPrice;
     var insideMin = minPrice <=0 || numericPrice >= minPrice;
@@ -118,7 +118,7 @@ function scriptMain() {
 	// breadcrumb class is different for category listing page e.g.
 	// http://www.trademe.co.nz/property/residential-property-for-sale/canterbury/christchurch-city
 	var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .category-listings-breadcrumbs a:first");
-	var priceColumnClass = ".listingPrice";
+	var priceColumnClass = ".list-view-card-price";
 	if (firstBreadCrumb.length == 0) {
 		// "Properties from this office" page
 		firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
