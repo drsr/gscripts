@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Google reminder
 // @namespace  http://drsr/
-// @version    0.3
+// @version    0.4
 // @description  Add a Google Calendar reminder link to Trademe auction pages
 // @include    /http:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /http:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
@@ -9,6 +9,7 @@
 // @grant      GM_addStyle
 // @copyright  public domain
 // ==/UserScript==
+// v0.4 another update for new format
 // v0.3 work with new listing format
 
 var $ = unsafeWindow.jQuery;
@@ -24,11 +25,10 @@ function getCloseDateTime() {
     // format of closing time is "Closes: Sat 16 Jun, 3:05 pm." and optionally " This auction may auto-extend"
     // doesn't work for periods less than one day where time is e.g. "4 hours", but not really worth a GCAL reminder then
     var closing = $("#BidBuyNow_closingContainer,#ClosingTime_ClosingTimeContainer").text();
-    debugger;
     if (closing && closing.indexOf("Closes:") > -1) {
         // get just date and time without dayname but including am/pm
-        closing = $.trim(closing)+"."; // extra dot for new format
-        var closeTime = /Closes:\s+\w+\s+(.*m)\..*/.exec(closing);
+        closing = $.trim(closing.replace(new RegExp("\n", 'g'), ""));
+        var closeTime = /Closes:\s+\w+\s+(.*[ap]m).*/.exec(closing);
         if (closeTime) {
             closeTime = closeTime[1];
             // insert year
@@ -72,7 +72,7 @@ function addReminderLink(reminderTime) {
         "&dates=" + utcDate + "/" + utcDate +
         "&details=" + escape(location.href); 
 
-    GM_addStyle(".tmgr_addToGoogle {padding-top:5px;}");
+    GM_addStyle(".tmgr_addToGoogle {padding-top:5px; text-align:center}");
     // TODO better layout
     $("#SaveToWatchlist_SaveToWatchlistButton,#ClosingTime_ClosingTimeContainer")
         .after('<div id="tmgr_addToGoogle" class="tmgr_addToGoogle">' + 
@@ -81,7 +81,6 @@ function addReminderLink(reminderTime) {
                    '</a>' +
                '</div>');
 }
-
 
 var reminderTime = getCloseDateTime();
 if (reminderTime) {
