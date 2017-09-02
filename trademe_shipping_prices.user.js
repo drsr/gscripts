@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name       TradeMe shipping prices
 // @namespace  http://drsr/
-// @version    0.9.5
+// @version    0.9.6
 // @description  Show shipping price, seller, and other auction details on search results, and thumbnail image for non-gallery items
-// @include    http://www.trademe.co.nz/*
+// @include    https://www.trademe.co.nz/*
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==

@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos
 // @namespace  http://drsr/
-// @version    0.8
+// @version    0.9
 // @description  Show all the large photos on a listing
-// @include    /http:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
-// @include    /http:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
-// @include    /http:\/\/www\.trademe\.co\.nz\/a\.aspx.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/a\.aspx.*/
 // @grant      GM_addStyle
 // @grant      GM_getResourceURL
 // @copyright  public domain
@@ -14,6 +14,7 @@
 // @require    https://greasyfork.org/scripts/2723-bpopup/code/bPopup.js?version=7539
 // @resource   grey_pixel http://drsr.site90.com/img/grey.gif
 // ==/UserScript==
+// v0.9: https
 // v0.8: update for new listing format
 // v0.7: external bPopup to comply with greasyfork rules
 // v0.6: fix for new large image URLs, don't show link when there's only one photo

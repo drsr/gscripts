@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
-// @version    1.1.3
+// @version    1.1.4
 // @description  Filter out listings that don't name a definite price in Real Estate search results. Works in List view only
-// @include    /http://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
+// @include    /https://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
-// @include    http://www.trademe.co.nz/property/*
-// @include    http://www.trademe.co.nz/browse/property/regionlistings.aspx*
-// @include    http://www.trademe.co.nz/members/listings.aspx*
+// @include    https://www.trademe.co.nz/property/*
+// @include    https://www.trademe.co.nz/browse/property/regionlistings.aspx*
+// @include    https://www.trademe.co.nz/members/listings.aspx*
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==

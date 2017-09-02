@@ -1,15 +1,16 @@
 // ==UserScript==
 // @name       Trademe feedback item descriptions
 // @namespace  http://drsr/
-// @version    1.1
+// @version    1.2
 // @description  Adds auction item description and price (where available) to feedback listing
-// @include    http://www.trademe.co.nz/Members/Feedback.aspx*
-// @include    /http:\/\/www.trademe.co.nz\/stores\/.*\/feedback/
+// @include    https://www.trademe.co.nz/Members/Feedback.aspx*
+// @include    /https:\/\/www.trademe.co.nz\/stores\/.*\/feedback/
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==
 /*
 * Changes:
+* v1.2 https
 * v1.1 New auction page layout
 * v1.0 Greasemonkey 2.0
 * v0.9 Avoid double item descriptions from feedback filter script

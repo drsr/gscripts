@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name       Trademe feedback filter
 // @namespace  http://drsr/
-// @version    1.3
+// @version    1.4
 // @description  Show negative, neutral, and incomplete feedback only
-// @include    http://www.trademe.co.nz/Members/Feedback.aspx*
-// @include    http://www.trademe.co.nz/stores/*
+// @include    https://www.trademe.co.nz/Members/Feedback.aspx*
+// @include    https://www.trademe.co.nz/stores/*
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==
+// v1.4: https
 // v1.3: Greasemonkey 2.0 changes
 // v1.2: Fix sort for change in date format in feedback list
 // v1.1: Avoid double item descriptions from feedback item descriptions script

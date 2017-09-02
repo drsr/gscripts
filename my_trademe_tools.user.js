@@ -1,16 +1,17 @@
 // ==UserScript==
 // @name       My Trademe Tools
 // @namespace  http://drsr/
-// @version    0.6
+// @version    0.7
 // @description  Tweaks for My Trademe, especially watchlist notes
-// @include    http://www.trademe.co.nz/*
+// @include    https://www.trademe.co.nz/*
 // @include    https://www.trademe.co.nz/MyTradeMe/*
 //    exclude iframe on stuff.co.nz pages
-// @exclude    http://www.trademe.co.nz/iframe/*
+// @exclude    https://www.trademe.co.nz/iframe/*
 // @copyright  public domain
 // @grant		GM_xmlhttpRequest
 // @grant		unsafeWindow
 // ==/UserScript==
+// v0.7: https
 // v0.6: Fix for TM watchlist moved to https (probably Chrome only)
 // v0.5: Fix for Firefox
 // v0.4: More real estate attributes
@@ -56,7 +57,7 @@ function embiggenNotes() {
 function addInterestingAttributes() {
     var attribsToFetch = ["Available", "Location", "Furnishings", "Parking", "Rooms", "Floor area", "Land area", "Rateable value (RV)", "Kilometres", "Engine size", "Engine", "Registration expires", "WOF expires"];
 	return $("tr[id*='row2']").each(function(index, watchlistRow) {
-        var auctionLink = "http://www.trademe.co.nz" + $("a:first", watchlistRow).attr("href");
+        var auctionLink = "https://www.trademe.co.nz" + $("a:first", watchlistRow).attr("href");
         // can't use $.get() due to same-origin policy
         GM_xmlhttpRequest({
   			method: "GET",

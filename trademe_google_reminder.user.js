@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name       TradeMe Google reminder
 // @namespace  http://drsr/
-// @version    0.4
+// @version    0.5
 // @description  Add a Google Calendar reminder link to Trademe auction pages
-// @include    /http:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
-// @include    /http:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
-// @include    /http:\/\/www\.trademe\.co\.nz\/a\.aspx.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/a\.aspx.*/
 // @grant      GM_addStyle
 // @copyright  public domain
 // ==/UserScript==
+// v0.5 https
 // v0.4 another update for new format
 // v0.3 work with new listing format
 

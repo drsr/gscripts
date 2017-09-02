@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name       TradeMe Killfile
 // @namespace  http://drsr/
-// @version    3.0.2
+// @version    3.1.0
 // @description  Killfile for Trademe Message board using blacklist. Messages by users on the Trademe blacklist are given a special style
-// @include    http://www.trademe.co.nz/Community/MessageBoard/*
+// @include    https://www.trademe.co.nz/Community/MessageBoard/*
 // @include    https://www.trademe.co.nz/MyTradeMe/BlackList.aspx*
-// @include    http://www.trademe.co.nz/Members/Listings.aspx*
-// @include    http://www.trademe.co.nz/Members/Logout.aspx*
+// @include    https://www.trademe.co.nz/Members/Listings.aspx*
+// @include    https://www.trademe.co.nz/Members/Logout.aspx*
 // @include    https://www.trademe.co.nz/MyTradeMe/Favourites.aspx?pv=3
 // @require https://greasyfork.org/scripts/2722-gm-config-mod-library/code/gm_config_mod%20library.js?version=7536
 // @require http://cdn.jsdelivr.net/jquery.jeditable/1.7.3/jquery.jeditable.js
@@ -20,6 +20,8 @@
 // ==/UserScript==
 
 /* Changes:
+TODO: Add to blacklist not working
+v3.1.0: https
 v3.0.2: Fix cached blacklist not clearing when user added or removed
 v3.0.1: "Add to blacklist" link on store pages, fix blacklist note data for https change
 v3.0: handle move of the MyTrademe pages to https
