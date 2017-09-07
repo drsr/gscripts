@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos
 // @namespace  http://drsr/
-// @version    0.9
+// @version    0.9.1
 // @description  Show all the large photos on a listing
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
 // @include    /https:\/\/www\.trademe\.co\.nz\/a\.aspx.*/
+// @include    /https:\/\/www\.trademe\.co\.nz\/[0-9]*/
 // @grant      GM_addStyle
 // @grant      GM_getResourceURL
 // @copyright  public domain
