@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name       Trademe feedback filter
 // @namespace  http://drsr/
-// @version    1.4
+// @version    1.5
 // @description  Show negative, neutral, and incomplete feedback only
 // @include    https://www.trademe.co.nz/Members/Feedback.aspx*
 // @include    https://www.trademe.co.nz/stores/*
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==
+// v1.5: fix auction archive links over https
 // v1.4: https
 // v1.3: Greasemonkey 2.0 changes
 // v1.2: Fix sort for change in date format in feedback list
@@ -103,11 +104,24 @@ function sortNegs() {
     });
 }
 
+function fixArchiveUrl(auctionUrl) {
+    // TM does a stupid double-redirect for archive listings which breaks single-origin for https
+    // e.g. https://www.trademe.co.nz/Archive/Browse/Listing.aspx?id=nnnnnnnnn
+    // 301's to http://www.trademe.co.nz/Browse/Listing.aspx?archive=1&id=nnnnnnnn
+    // which 301's to https://www.trademe.co.nz/Browse/Listing.aspx?archive=1&id=nnnnnnnnnn
+    // So manually tweak the archive links here to avoid this
+    if(auctionUrl.indexOf("/Archive/") != -1) {
+        return auctionUrl.replace("/Archive/", "/") + "&archive=1";
+    }
+    return auctionUrl;
+}
+
 var ITEM_DONE_MARKER = "tmfbid_done";
 function addItemDescription(feedbackItem) {
     // fourth column contains the auction link
     var auctionUrl = $("td:eq(3) > table > tbody > tr a", feedbackItem).attr("href");
     if (auctionUrl) {
+        auctionUrl=fixArchiveUrl(auctionUrl);
         $.get(auctionUrl, function(listing) {
             $firstRow = $(feedbackItem[0]);
             $firstRow.addClass(ITEM_DONE_MARKER);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Google reminder
 // @namespace  http://drsr/
-// @version    0.5
+// @version    0.6
 // @description  Add a Google Calendar reminder link to Trademe auction pages
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
@@ -9,6 +9,7 @@
 // @grant      GM_addStyle
 // @copyright  public domain
 // ==/UserScript==
+// v0.6 more https
 // v0.5 https
 // v0.4 another update for new format
 // v0.3 work with new listing format
@@ -68,7 +69,7 @@ function addReminderLink(reminderTime) {
     // Link format: http://support.google.com/calendar/bin/answer.py?hl=en&answer=2476685
     // annoyingly Google Calendar web app won't auto-link to either HTML or plain link in the title or details, 
     // but other calendar and browser apps e.g. Android should when they popup the reminder
-    var reminderLink = "http://www.google.com/calendar/event?action=TEMPLATE" + 
+    var reminderLink = "https://www.google.com/calendar/event?action=TEMPLATE" + 
         "&text=TM: " + escape(auctionTitle) +  
         "&dates=" + utcDate + "/" + utcDate +
         "&details=" + escape(location.href); 
@@ -78,7 +79,7 @@ function addReminderLink(reminderTime) {
     $("#SaveToWatchlist_SaveToWatchlistButton,#ClosingTime_ClosingTimeContainer")
         .after('<div id="tmgr_addToGoogle" class="tmgr_addToGoogle">' + 
                    '<a href="' + reminderLink + '">' +
-                       '<img src="http://www.google.com/calendar/images/ext/gc_button2.gif">' +
+                       '<img src="https://www.google.com/calendar/images/ext/gc_button2.gif">' +
                    '</a>' +
                '</div>');
 }

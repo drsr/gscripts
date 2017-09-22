@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       Trademe feedback item descriptions
 // @namespace  http://drsr/
-// @version    1.2
+// @version    1.3
 // @description  Adds auction item description and price (where available) to feedback listing
 // @include    https://www.trademe.co.nz/Members/Feedback.aspx*
 // @include    /https:\/\/www.trademe.co.nz\/stores\/.*\/feedback/
@@ -10,6 +10,7 @@
 // ==/UserScript==
 /*
 * Changes:
+* v1.3 fix auction archive links over https
 * v1.2 https
 * v1.1 New auction page layout
 * v1.0 Greasemonkey 2.0
@@ -83,6 +84,18 @@ function feedbackTableContainer() {
     return ret;
 }
 
+function fixArchiveUrl(auctionUrl) {
+    // TM does a stupid double-redirect for archive listings which breaks single-origin for https
+    // e.g. https://www.trademe.co.nz/Archive/Browse/Listing.aspx?id=nnnnnnnnn
+    // 301's to http://www.trademe.co.nz/Browse/Listing.aspx?archive=1&id=nnnnnnnn
+    // which 301's to https://www.trademe.co.nz/Browse/Listing.aspx?archive=1&id=nnnnnnnnnn
+    // So manually tweak the archive links here to avoid this
+    if(auctionUrl.indexOf("/Archive/") != -1) {
+        return auctionUrl.replace("/Archive/", "/") + "&archive=1";
+    }
+    return auctionUrl;
+}
+
 // link style for breadcrumbs to match style used in main listing
 addStyle(".tmfbid_bc a{color:#0066CC; text-decoration:none;}");
 
@@ -93,7 +106,7 @@ $("> table:eq(2) > tbody > tr[valign='top']", feedbackTableContainer()).each(
         var auctionUrl = $("td:eq(3) > table > tbody > tr a", feedbackItem).attr("href");
         if (auctionUrl) {
             // rate-limit listing page requests by queuing them
-            listingQueue.push(new listingItem(auctionUrl, feedbackItem));
+            listingQueue.push(new listingItem(fixArchiveUrl(auctionUrl), feedbackItem));
         }
     });
 // start fetching listing pages
