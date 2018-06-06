@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos
 // @namespace  http://drsr/
-// @version    0.9.1
+// @version    0.9.2
 // @description  Show all the large photos on a listing
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
@@ -15,6 +15,7 @@
 // @require    https://greasyfork.org/scripts/2723-bpopup/code/bPopup.js?version=7539
 // @resource   grey_pixel http://drsr.site90.com/img/grey.gif
 // ==/UserScript==
+// v0.9.2: rough support for a new lightbox format found in realestate
 // v0.9: https
 // v0.8: update for new listing format
 // v0.7: external bPopup to comply with greasyfork rules
@@ -123,6 +124,7 @@ var SCROLLER_LEFT_MARGIN = 20;
 
 // max image dimensions for the current category, images may be (much) smaller
 function imageDimensions() {
+    // TODO doesn't work with new #thumbs container because it doesn't have the data-photo-max-size attribute on the li
     if (myJQ("#Photobox_OtherPhotos")) {
         // new format, calculate max of data-photo-max-size width and height
         var maxWidth = 1;
@@ -130,13 +132,13 @@ function imageDimensions() {
         myJQ("#Photobox_thumbs li").each(function(index, value) {
             var photoMaxSize = myJQ(value).attr("data-photo-max-size");
             if (photoMaxSize) {
-                photoWidth = 0+photoMaxSize.split(",")[0];
-                photoHeight = 0+photoMaxSize.split(",")[1];
+                var photoWidth = 0+photoMaxSize.split(",")[0];
+                var photoHeight = 0+photoMaxSize.split(",")[1];
                 maxWidth = Math.max(maxWidth, photoWidth);
                 maxHeight = Math.max(maxHeight, photoHeight);
             }
         });
-        return {width:maxWidth, heigh:maxHeight, cellClass:"tmsatp_largerCell"};
+        return {width:maxWidth, height:maxHeight, cellClass:"tmsatp_largerCell"};
     } else {
         // old format, always assume 800x600 max
         return {width:800, height:600, cellClass:"tmsatp_largerCell"};
@@ -151,7 +153,7 @@ function imageLargeUrl(img) {
     var imageId = myJQ(img).parent().attr("data-photo-id");
     if (imageId) {
         // TODO the "plus" image still appears to exist even if there is no zoom box, any exceptions?
-        retUrl = myJQ("#Photobox_PhotoserverPlusUrlString").attr("value") + imageId + ".jpg";
+        retUrl = myJQ("#Photobox_PhotoserverPlusUrlString,#PhotoserverPlusUrlString").attr("value") + imageId + ".jpg";
     } else {
         // old format
         // thumbnail link has class "lbt_nnnnn"
@@ -172,7 +174,7 @@ function imageLargeUrl(img) {
 
 function genImages() {
     // Get all the lightbox thumbs
-    var allImages = myJQ(".lbThumb img,#Photobox_thumbs img");
+    var allImages = myJQ(".lbThumb img,#Photobox_thumbs img,#thumbs img");
 	var imageCount = allImages.length;
     
     var dimensions = imageDimensions();
@@ -192,7 +194,6 @@ function genImages() {
 		for (var col=0; col < columns; col++) {
 			if (i >= allImages.length) break;
 			var bigImage = imageLargeUrl(allImages[i]);
-            
             var td;
             // if last image is odd-numbered, span both columns in the last row
             if (columns === 2 && i===(allImages.length-1) && (i%2===0)) {
@@ -290,10 +291,10 @@ function showAllThePhotos() {
     });
 }
 
-// Only show "all photos" link if there's more than 1 photo (2nd path is for new photobox format)
-if (myJQ(".lbThumb img,#Photobox_thumbs li").length > 1) { 
+// Only show "all photos" link if there's more than 1 photo (2nd path is for new photobox format, 3rd is for realestate)
+if (myJQ(".lbThumb img,#Photobox_thumbs li,#thumbs li").length > 1) {
     // second path is for new photobox format, present even if only one photo
-    myJQ("#viewFullSize,#pager").after(myJQ("<a />", 
+    myJQ("#viewFullSize,#pager,#OtherPhotosContainer").after(myJQ("<a />",
         {id: "showallthephotos",
          href: "javascript:void(0)",
          title: "View all the full size photos (Greasemonkey script)",
@@ -301,5 +302,5 @@ if (myJQ(".lbThumb img,#Photobox_thumbs li").length > 1) {
          click: showAllThePhotos}))
         .after("<br />");
     
-}//    http://www.trademe.co.nz/clothing-fashion/men/jackets/auction-877115196.htm
+}
 
