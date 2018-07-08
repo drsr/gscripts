@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name       TradeMe shipping prices
 // @namespace  http://drsr/
-// @version    0.9.6
-// @description  Show shipping price, seller, and other auction details on search results, and thumbnail image for non-gallery items
+// @version    0.9.7
+// @description  Show shipping price and seller on search results in detail mode
 // @include    https://www.trademe.co.nz/*
 // @grant      none
 // @copyright  public domain
 // ==/UserScript==
+// v0.9.6: Yet another new listing details page format, remove car stuff as not really interested, no need for thumbnail fetch any more
 // v0.9.5: Update for new listing details page format
 // v0.9.4: Support new listing details page format 
 // v0.9.3: Don't run on property pages
@@ -25,7 +26,7 @@
 
 // replace trademe's JS error handler
 window.onerror=function(msg, url, linenumber){
-//    console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
+    console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
         return true;
 };
 function addShipping(card, listing) {
@@ -44,15 +45,24 @@ function addShipping(card, listing) {
         }
         // Some items only have a buy now, not a bid price
         var priceLocation = $(".listingBidPrice", card);
-        if (priceLocation.length == 0) {
+        // Start=reserve with same buy-now price has the listingBidPrice present but hidden!
+        if (priceLocation.length == 0 || priceLocation.parent().hasClass("nobidding")) {
+            // add after "Buy now" text and make div wider to fit
             priceLocation = $(".listingBuyNowText", card);
+            if (priceLocation.length == 0) {
+            }
+            priceLocation.css("width", "190px");
+            priceLocation.append(" + " + shippingPrice)
+        } else {
+            priceLocation.append('<br/><span class="tmsp_shipping">+'+shippingPrice+"</span>");
         }
-        priceLocation.append('<br/><span class="tmsp_shipping">+'+shippingPrice+"</span>");
+    } else {
+    	// console.log("didn't find shipping list");
     }
 }
 
 function findListingLocation(card) {
-    var listingLocation = $(".listingLocation", card);
+    var listingLocation = $(".location", card);
     if (listingLocation.length==0) {
         listingLocation = $('div[id $= "_listingLocation"]', card); // Motors
     }
@@ -73,49 +83,6 @@ function addSeller(card, listing) {
     }
     if (seller && seller.length > 0) {
         findListingLocation(card).prepend(",&nbsp;").prepend(seller);
-    }
-}
-
-function addThumbnail(card, listing) {
-	var thumbnailInCard = $(".listingImage img[src*=hasPhoto]", card); // non-gallery items with photos
-    if (thumbnailInCard.length > 0) {
-        var thumbnailInListingPath = $("#mainImage,#Photobox_MainImage", listing).attr("src");
-        if (thumbnailInListingPath) {
-            thumbnailInCard.attr("src", thumbnailInListingPath.replace(/(\/tq\/)|(\/full\/)/i, '/hfc/')); // get higher-def thumbnail without having to load the full-size image
-            thumbnailInCard.css("max-width", "160px").css("max-height", "120px"); // some hfcs are wider than 160px, might be a bug, or deliberate?
-        }
-    }
-}
-
-function addCarStuff(card, listing) {
-    var attribsToFetch = ["Registration expires", "WOF expires"];
-    if ($("[id$=MotorCard_listingSpecs]", card).length==0) { // not sure why some cards have this and some don't
-        ["Kilometres", "Engine size", "Engine"].concat(attribsToFetch);
-    }
-    
-    // Try some house attribs
-    ["Location", "Land area", "Parking"].concat(attribsToFetch);
-    
-    var listingAttribs = {};
-    $("[id^=ListingAttributes_AttributesRepeater]", listing).each(
-        function(index, attrib) {
-            listingAttribs[$.trim(attrib.textContent).slice(0,-1)]=$.trim($(attrib).next().text());
-        });
-    var listingLocation = findListingLocation(card);
-    var interestingAttribs = [];
-    $.each(attribsToFetch, 
-           function(index, attribName) { 
-               if (listingAttribs[attribName]) {
-                   if (attribName==='Location') {
-                       	var locationText = listingAttribs[attribName].split("<br>").slice(0,1).join(" ");
-                       	interestingAttribs.push(locationText);
-                   } else {
-                   		interestingAttribs.push(attribName + ": " + listingAttribs[attribName]);
-                   }
-               }
-           });
-    if (interestingAttribs.length > 0) {
-        listingLocation.after('<div class="rightArrows">' + interestingAttribs.join(", ") + '</div>');
     }
 }
 
@@ -141,12 +108,14 @@ if (isPropertyPage()) {
 
 addStyle(".tmsp_shipping {font-size:11px; font-style: italic;}");
 
-$("#ListViewList .listingCard").each(function(index, card){
-    var auctionUrl = $(".listingTitle > a", card).attr('href');
-    $.get(auctionUrl, function(listing) {
-        addShipping(card, listing);
-        addSeller(card, listing);
-        addThumbnail(card, listing);
-        addCarStuff(card, listing);
-    });
+$(".largelist").each(function(index, card){
+    var auctionUrl = $("a", card).attr('href');
+    if (auctionUrl) {
+        auctionUrl = auctionUrl.split('?')[0];
+        $.get(auctionUrl, function(listing) {
+//            console.log("processing " + auctionUrl);
+            addShipping(card, listing);
+            addSeller(card, listing);
+        });
+    }
 });
