@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
-// @version    1.1.4
+// @version    1.2
 // @description  Filter out listings that don't name a definite price in Real Estate search results. Works in List view only
 // @include    /https://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
@@ -92,11 +92,11 @@ function priceInsideRange(price) {
     }
 
     // get the max and min prices from the search form 
-    // values for "Any" = 0, "2M+" = 2000000
+    // values for "Any" = 0, "10M+" = 10000000
     var maxPrice = parseInt($("#max-49").val());
     var minPrice = parseInt($("#min-49").val());   
-    // check for 2 million because this search form option is actually 2 million plus so doesn't count as a max
-    var insideMax =  maxPrice <= 0 || maxPrice == 2000000 || numericPrice <= maxPrice;
+    // check for 10 million because this search form option is actually 10 million plus so doesn't count as a max
+    var insideMax =  maxPrice <= 0 || maxPrice == 10000000 || numericPrice <= maxPrice;
     var insideMin = minPrice <=0 || numericPrice >= minPrice;
 
     return (insideMin && insideMax);
@@ -104,11 +104,17 @@ function priceInsideRange(price) {
 
 function addListingHeader() {
     if (killedListingCount > 0) {
+
         // add after the "nnnn listings, showing n to n" para
-        // there are two of these, one <div> and one <p>, with one hidden depending on browse or search mode
+        // there are two of these, one <div> and one <p>, with one hidden depending on browse or search mode, but hide operation happens after this script
         $(".listing-count-holder").each(function(index, listingCount) {
-			var $listingCount = $(listingCount);
-            $listingCount.html($listingCount.text()+ ". " + killedListingCount + ' hidden listings, <a class="killToggle" title="listings hidden by TradeMe Real Estate Filter script" href="javascript:void(0)">show</a>');
+            var $listingCount = $(listingCount);
+            if (listingCount.nodeName=='DIV') {
+                // don't use listing-count-holder class as contents will be overwritten by TM script
+                $listingCount.after('<div class="listing-count-label" style="font-size:12px; line-height:18px">' + killedListingCount + ' hidden listings, ' +
+                                    '<a class="killToggle" title="listings hidden by TradeMe Real Estate Filter script" href="javascript:void(0)">show</a>'+
+                                    '</div>');
+            }
         });
         $(".killToggle").click(toggleListingVisibility);
     }
@@ -119,7 +125,7 @@ function scriptMain() {
 	// breadcrumb class is different for category listing page e.g.
 	// http://www.trademe.co.nz/property/residential-property-for-sale/canterbury/christchurch-city
 	var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .category-listings-breadcrumbs a:first");
-	var priceColumnClass = ".list-view-card-price";
+	var priceColumnClass = ".tmp-search-card-list-view__price";
 	if (firstBreadCrumb.length === 0) {
 		// "Properties from this office" page
 		firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
@@ -133,7 +139,7 @@ function scriptMain() {
 			var price = listingPrice.textContent;
 			if (KILL_PATTERN.test(price) || !priceInsideRange(price)) {
 				
-			   $(listingPrice).closest(".listingCard").addClass("killedlisting hiddenlisting");
+			   $(listingPrice).closest(".tmp-search-card-list-view").addClass("killedlisting hiddenlisting");
 				killedListingCount++;
 				
 			}});
