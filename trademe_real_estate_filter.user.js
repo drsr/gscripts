@@ -2,7 +2,7 @@
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
 // @version    1.2
-// @description  Filter out listings that don't name a definite price in Real Estate search results. Chrome/Tampermonkey only
+// @description  Filter out listings that don't name a definite price in Real Estate search results. List view only. Tampermonkey only
 // @include    /https://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
 // @include    https://www.trademe.co.nz/property/*
@@ -154,4 +154,4 @@ function scriptMain() {
 		addListingHeader();
 	}        
 }
-    scriptMain();
+scriptMain();
