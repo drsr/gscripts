@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name       TradeMe Real Estate filter
 // @namespace  http://drsr/
-// @version    1.1.4
-// @description  Filter out listings that don't name a definite price in Real Estate search results. Works in List view only
+// @version    1.2
+// @description  Filter out listings that don't name a definite price in Real Estate search results. Chrome/Tampermonkey only
 // @include    /https://www\.trademe\.co\.nz/[Bb]rowse/[Cc]ategory[Aa]ttribute[Ss]earch[Rr]esults.aspx.*/
 //    tried using params to select only real estate search results but there are too many variants
 // @include    https://www.trademe.co.nz/property/*
@@ -15,7 +15,7 @@
 
 //-----------------------------------------------------------------------------------------------
 // Listings with a "price" that matches this pattern will be hidden
-var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(Tender)|(Deadline private treaty)/i;
+var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(Tender)|(Deadline private treaty)|(Deadline sale)/i;
 
 // Some alternative kill patterns below, remove the "//" at the start of the line add a "//" before the other patterns to use them
 
@@ -92,11 +92,11 @@ function priceInsideRange(price) {
     }
 
     // get the max and min prices from the search form 
-    // values for "Any" = 0, "2M+" = 2000000
+    // values for "Any" = 0, "10M+" = 10000000
     var maxPrice = parseInt($("#max-49").val());
     var minPrice = parseInt($("#min-49").val());   
-    // check for 2 million because this search form option is actually 2 million plus so doesn't count as a max
-    var insideMax =  maxPrice <= 0 || maxPrice == 2000000 || numericPrice <= maxPrice;
+    // check for 10 million because this search form option is actually 10 million plus so doesn't count as a max
+    var insideMax =  maxPrice <= 0 || maxPrice == 10000000 || numericPrice <= maxPrice;
     var insideMin = minPrice <=0 || numericPrice >= minPrice;
 
     return (insideMin && insideMax);
@@ -104,22 +104,30 @@ function priceInsideRange(price) {
 
 function addListingHeader() {
     if (killedListingCount > 0) {
+
         // add after the "nnnn listings, showing n to n" para
-        // there are two of these, one <div> and one <p>, with one hidden depending on browse or search mode
+        // there are two of these, one <div> and one <p>, with one hidden depending on browse or search mode, but hide operation happens after this script
         $(".listing-count-holder").each(function(index, listingCount) {
-			var $listingCount = $(listingCount);
-            $listingCount.html($listingCount.text()+ ". " + killedListingCount + ' hidden listings, <a class="killToggle" title="listings hidden by TradeMe Real Estate Filter script" href="javascript:void(0)">show</a>');
+            var $listingCount = $(listingCount);
+            if (listingCount.nodeName=='DIV') {
+                // don't use listing-count-holder class as contents will be overwritten by TM script
+                $listingCount.after('<div class="listing-count-label" style="font-size:12px; line-height:18px">' + killedListingCount + ' hidden listings, ' +
+                                    '<a class="killToggle" title="listings hidden by TradeMe Real Estate Filter script" href="javascript:void(0)">show</a>'+
+                                    '</div>');
+            }
         });
         $(".killToggle").click(toggleListingVisibility);
     }
 }
 
 function scriptMain() {
+
 	// try to check for property search results as it sometimes fires on Motors search results
 	// breadcrumb class is different for category listing page e.g.
 	// http://www.trademe.co.nz/property/residential-property-for-sale/canterbury/christchurch-city
+
 	var firstBreadCrumb = $("#mainContent .site-breadcrumbs a:first, #mainContent .category-listings-breadcrumbs a:first");
-	var priceColumnClass = ".list-view-card-price";
+	var priceColumnClass = ".tmp-search-card-list-view__price, .tmp-search-card-top-tier__price";
 	if (firstBreadCrumb.length === 0) {
 		// "Properties from this office" page
 		firstBreadCrumb = $("#BreadCrumbsStore_BreadcrumbsContainer a:first");
@@ -132,8 +140,11 @@ function scriptMain() {
 		$(priceColumnClass).each(function(index, listingPrice) {
 			var price = listingPrice.textContent;
 			if (KILL_PATTERN.test(price) || !priceInsideRange(price)) {
-				
-			   $(listingPrice).closest(".listingCard").addClass("killedlisting hiddenlisting");
+				card = $(listingPrice).closest(".tmp-search-card-list-view, .tmp-search-card-top-tier")
+                if (card.length > 0) {
+                    card.addClass("killedlisting hiddenlisting");
+                    card.removeClass("feature highlight")
+                }
 				killedListingCount++;
 				
 			}});
@@ -143,5 +154,4 @@ function scriptMain() {
 		addListingHeader();
 	}        
 }
-// wait for load as the TM page overwrites the "Showing n to n" header otherwise
-$(window).load(scriptMain);
+    scriptMain();
