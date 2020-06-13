@@ -26,6 +26,7 @@ var KILL_PATTERN = /(Price by negotiation)|(Enquiries Over)|(To be auctioned)|(T
 // var KILL_PATTERN = /Price by negotiation/i;
 //-----------------------------------------------------------------------------------------------
 
+// v1.3 work with top-tier and highlighted listings
 // v1.1.3 Fix hiding all rental listings
 // v1.1.2 Trademe changed class for listing price
 // v1.1, v1.1.1 Greasemonkey 2.0 changes
