@@ -1,7 +1,8 @@
 // ==UserScript==
-// @name       TradeMe Show All The Photos
+// @name       TradeMe Show All The Photos (Tampermonkey only)
 // @namespace  http://drsr/
-// @version    0.9.2
+// @version    0.9.3
+// @run-at      document-idle
 // @description  Show all the large photos on a listing
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/auction-.*/
@@ -13,8 +14,8 @@
 // @require    http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js
 // @require    http://cdnjs.cloudflare.com/ajax/libs/jquery.lazyload/1.9.1/jquery.lazyload.min.js
 // @require    https://greasyfork.org/scripts/2723-bpopup/code/bPopup.js?version=7539
-// @resource   grey_pixel http://drsr.site90.com/img/grey.gif
 // ==/UserScript==
+// v0.9.3: support for new tg and gallery formats
 // v0.9.2: rough support for a new lightbox format found in realestate
 // v0.9: https
 // v0.8: update for new listing format
@@ -27,7 +28,6 @@
 
 // TODO:
 // lazy load order is strange, image#1 gets loaded last?
-// dynamic resize?
 
 // replace trademe's JS error handler
 window.onerror=function(msg, url, linenumber){
@@ -41,6 +41,8 @@ var initialised = false;
 var initialHeight = 0;
 var saveTop = 0;
 var resizeTimer = null;
+var fullImageUrls = []
+var TG_THUMB_SELECTOR = ".tm-marketplace-listing-photos__thumbnail-slider-item,.tm-listing-photos__thumbnail-slider-item";
 
 function init() {
     if (initialised) {
@@ -125,7 +127,10 @@ var SCROLLER_LEFT_MARGIN = 20;
 // max image dimensions for the current category, images may be (much) smaller
 function imageDimensions() {
     // TODO doesn't work with new #thumbs container because it doesn't have the data-photo-max-size attribute on the li
-    if (myJQ("#Photobox_OtherPhotos")) {
+    if (myJQ(".tm-marketplace-listing-photos__thumbnail-slider-item")) {
+        // todo scrape o-aspect-ratio?
+        return {width:640, height:480, cellClass:"tmsatp_imgcell"};
+    } else if (myJQ("#Photobox_OtherPhotos")) {
         // new format, calculate max of data-photo-max-size width and height
         var maxWidth = 1;
         var maxHeight = 1;
@@ -148,7 +153,6 @@ function imageDimensions() {
 // calculate URL for large image from thumbnail <img>
 function imageLargeUrl(img) {
     var retUrl;
-    
     // try new photobox format first, parent LI has a data-photo-id attribute
     var imageId = myJQ(img).parent().attr("data-photo-id");
     if (imageId) {
@@ -157,7 +161,7 @@ function imageLargeUrl(img) {
     } else {
         // old format
         // thumbnail link has class "lbt_nnnnn"
-        var imageId = myJQ(img).parent().attr("class").substring(4);
+        imageId = myJQ(img).parent().attr("class").substring(4);
 
         // TODO is "photoStartIdNewDir" still used in the old-format listings? 
         // This is what TM does in their own script, comparing the current image ID to the ID where they started storing the images in a new path.
@@ -172,10 +176,51 @@ function imageLargeUrl(img) {
     return retUrl;
 }
 
-function genImages() {
+// Scrape images from Tangram Carousel https://tangram.nz/product/carousel into fullImageUrls
+function genImagesFromTgThumb() {
+    fullImageUrls = []
+    var allThumbs = myJQ(TG_THUMB_SELECTOR +" tg-aspect-ratio")
+    if (allThumbs) {
+        allThumbs.each(function(index, value) {
+            var imageUrl = myJQ(value).css("background-image").replace("/thumb/", "/full/").replace("url(\"","").replace("\")","");
+            console.log("imageUrl=" + imageUrl);
+            fullImageUrls.push(imageUrl);
+        });
+    }
+    console.log(fullImageUrls);
+}
+
+// scrape images from lightbox/photobox on old-style listings into fullImageUrls
+function genImagesFromLightbox() {
+    fullImageUrls = []
     // Get all the lightbox thumbs
     var allImages = myJQ(".lbThumb img,#Photobox_thumbs img,#thumbs img");
-	var imageCount = allImages.length;
+    if (allImages) {
+        allImages.each(function(index,value) {
+            var imageUrl = imageLargeUrl(value);
+            console.log("img imageUrl=" + imageUrl);
+            fullImageUrls.push(imageUrl);
+        });
+    }
+}
+
+// scrape images from realestate gallery into fullImageUrls
+function genImagesFromGallery() {
+    fullImageUrls = []
+    var allImages = myJQ(".tm-gallery-view__thumbnail");
+    if (allImages) {
+        allImages.each(function(index,value) {
+            var imageUrl = value.src.replace("64x64m","plus");
+            console.log("img imageUrl=" + imageUrl);
+            fullImageUrls.push(imageUrl);
+        });
+    }
+}
+
+
+function renderImages() {
+
+	var imageCount = fullImageUrls.length;
     
     var dimensions = imageDimensions();
     var padded = {width: dimensions.width + IMAGE_WIDTH_PADDING, height: dimensions.height + IMAGE_HEIGHT_PADDING};
@@ -185,18 +230,17 @@ function genImages() {
     // TODO if the images are > 800 wide as can happen with the new format, get horizontal scrolling, is this necessarily a bad thing?
 	var columns = ((jqWindow.width() > (padded.width*2 + SCROLLER_LEFT_MARGIN)) && imageCount > 2) ? 2 : 1;
 
-    var grey_pixel = GM_getResourceURL("grey_pixel");
+    var grey_pixel = "data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==";
 	// use a table for easy centering
 	var imgTable = myJQ('<table class="tmsatp_table"/>');
 	var i = 0;
-	while (i<allImages.length) {
+	while (i<imageCount) {
 		var row = myJQ("<tr/>");
 		for (var col=0; col < columns; col++) {
-			if (i >= allImages.length) break;
-			var bigImage = imageLargeUrl(allImages[i]);
+			if (i >= imageCount) break;
             var td;
             // if last image is odd-numbered, span both columns in the last row
-            if (columns === 2 && i===(allImages.length-1) && (i%2===0)) {
+            if (columns === 2 && i===(imageCount-1) && (i%2===0)) {
                 td = myJQ('<td/>', {class: "tmsatp_imgcell", colspan:"2"});
             } else {
                 td = myJQ('<td/>', {class: "tmsatp_imgcell " + dimensions.cellClass});
@@ -207,7 +251,7 @@ function genImages() {
 				   // fixed size because we don't know image dimensions yet, see lazyLoadDone
 				   width: dimensions.width,
 				   height: dimensions.height,
-				   "data-original": bigImage,
+				   "data-original": fullImageUrls[i],
 				   title: "Photo " + (i+1) + " of " + imageCount
 				}));
 			row.append(td);
@@ -243,7 +287,7 @@ function addSpacer() {
 }
 
 function centeredPosition() {
-	$window = myJQ(window);
+	var $window = myJQ(window);
     return {
         // center vertically in viewport
         top: Math.max(SCROLLER_TOP_MARGIN,($window.height() - myJQ("#allthephotosctr").height()) / 2) + saveTop,
@@ -260,8 +304,19 @@ function startLoading() {
     myJQ("img.tmsatp_lazy").lazyload({effect : "fadeIn", container: myJQ("#allthephotos"), load: lazyLoadDone});    
 }
 
+function genImages() {
+    if (myJQ(TG_THUMB_SELECTOR).length > 0) {
+        genImagesFromTgThumb();
+    } else if (myJQ(".tm-gallery-thumbnail-slider__item").length > 0) {
+        genImagesFromGallery();
+    } else {
+        genImagesFromLightbox();
+    }
+}
+
 function relayout() {
     genImages();
+    renderImages();
     addSpacer();
     recentre();
     startLoading();
@@ -271,6 +326,7 @@ function showAllThePhotos() {
     init();
     saveTop = myJQ(window).scrollTop();
     genImages();
+    renderImages();
     addSpacer();
     var pos = centeredPosition();
 	myJQ("#allthephotosctr").bPopup({
@@ -291,16 +347,24 @@ function showAllThePhotos() {
     });
 }
 
-// Only show "all photos" link if there's more than 1 photo (2nd path is for new photobox format, 3rd is for realestate)
-if (myJQ(".lbThumb img,#Photobox_thumbs li,#thumbs li").length > 1) {
-    // second path is for new photobox format, present even if only one photo
-    myJQ("#viewFullSize,#pager,#OtherPhotosContainer").after(myJQ("<a />",
+function addMainLink() {
+    if(myJQ("#showallthephotos").length == 0) {
+        myJQ("#viewFullSize,#pager,#OtherPhotosContainer,.tm-marketplace-buyer-options__commerce-box,.tm-motors-buyer-options__commerce-box,.tm-gallery-view__carousel--premium,.tm-propert-gallery-view__carousel-container").after(myJQ("<a />",
         {id: "showallthephotos",
          href: "javascript:void(0)",
-         title: "View all the full size photos (Greasemonkey script)",
+         title: "View all the full size photos (Tampermonkey script)",
          text: "View all photos",
          click: showAllThePhotos}))
-        .after("<br />");
-    
+            .after("<br />");
+    }
+}
+
+// Only show "all photos" link if there's more than 1 photo (2nd path is for new photobox format, 3rd is for realestate, 4th is for tg photobox)
+if (myJQ(".lbThumb img,#Photobox_thumbs li,#thumbs li,.tm-gallery-thumbnail-slider__item," + TG_THUMB_SELECTOR).length > 1) {
+    console.log("tmsatp found photobox with more than one photo");
+    // on a timer because TM repaint clears it
+    window.setInterval(addMainLink, 500);
+} else {
+    console.log("tmsatp no photobox or only one photo");
 }
 
