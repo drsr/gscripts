@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe shipping prices
 // @namespace  http://drsr/
-// @version    0.9.7
+// @version    0.9.8
 // @description  Show shipping price and seller on search results in detail mode
 // @include    https://www.trademe.co.nz/*
 // @grant      none
@@ -101,7 +101,7 @@ function isPropertyPage() {
 }
 
 
-if (isPropertyPage()) {
+if (typeof $ =='undefined' || isPropertyPage()) {
     // script doesn't anything useful to the property pages and causes jQuery to fetch loads of images for some reason
     return;
 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos (Tampermonkey only)
 // @namespace  http://drsr/
-// @version    0.9.3
+// @version    0.9.4
 // @run-at      document-idle
 // @description  Show all the large photos on a listing
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
@@ -349,22 +349,20 @@ function showAllThePhotos() {
 
 function addMainLink() {
     if(myJQ("#showallthephotos").length == 0) {
-        myJQ("#viewFullSize,#pager,#OtherPhotosContainer,.tm-marketplace-buyer-options__commerce-box,.tm-motors-buyer-options__commerce-box,.tm-gallery-view__carousel--premium,.tm-propert-gallery-view__carousel-container").after(myJQ("<a />",
+        // Only show "all photos" link if there's more than 1 photo
+        if (myJQ(".lbThumb img,#Photobox_thumbs li,#thumbs li,.tm-gallery-thumbnail-slider__item," + TG_THUMB_SELECTOR).length > 1) {
+            myJQ("#viewFullSize,#pager,#OtherPhotosContainer,.tm-marketplace-buyer-options__commerce-box,.tm-motors-buyer-options__commerce-box,.tm-gallery-view__carousel--premium,.tm-propert-gallery-view__carousel-container").after(myJQ("<a />",
         {id: "showallthephotos",
          href: "javascript:void(0)",
          title: "View all the full size photos (Tampermonkey script)",
          text: "View all photos",
          click: showAllThePhotos}))
-            .after("<br />");
+                .after("<br />");
+        }
     }
+    // keep timer running even if link already added because TM repaint clears it sometimes
 }
 
-// Only show "all photos" link if there's more than 1 photo (2nd path is for new photobox format, 3rd is for realestate, 4th is for tg photobox)
-if (myJQ(".lbThumb img,#Photobox_thumbs li,#thumbs li,.tm-gallery-thumbnail-slider__item," + TG_THUMB_SELECTOR).length > 1) {
-    console.log("tmsatp found photobox with more than one photo");
-    // on a timer because TM repaint clears it
-    window.setInterval(addMainLink, 500);
-} else {
-    console.log("tmsatp no photobox or only one photo");
-}
+
+window.setInterval(addMainLink, 500);
 
