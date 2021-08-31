@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos (Tampermonkey only)
 // @namespace  http://drsr/
-// @version    0.9.4
+// @version    0.9.5
 // @run-at      document-idle
 // @description  Show all the large photos on a listing
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
@@ -179,7 +179,8 @@ function imageLargeUrl(img) {
 // Scrape images from Tangram Carousel https://tangram.nz/product/carousel into fullImageUrls
 function genImagesFromTgThumb() {
     fullImageUrls = []
-    var allThumbs = myJQ(TG_THUMB_SELECTOR +" tg-aspect-ratio")
+    // TODO this doesn't always work as one select for some reason
+    var allThumbs = myJQ("tg-aspect-ratio",myJQ(TG_THUMB_SELECTOR))
     if (allThumbs) {
         allThumbs.each(function(index, value) {
             var imageUrl = myJQ(value).css("background-image").replace("/thumb/", "/full/").replace("url(\"","").replace("\")","");
