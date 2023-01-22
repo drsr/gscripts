@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Google reminder
 // @namespace  http://drsr/
-// @version    0.7
+// @version    0.8
 // @description  Add a Google Calendar reminder link to Trademe auction pages
 // @require    http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
@@ -22,12 +22,12 @@ window.onerror=function(msg, url, linenumber){
 
 function getCloseDateTime() {
     var closeDateTime = null;
-    // format of closing time is "Closes: Sat 16 Jun, 3:05 pm." and optionally " This auction may auto-extend"
+    // format of closing time is "Closes: Sat 16th Jun, 3:05 pm." and optionally " This auction may auto-extend"
     // doesn't work for periods less than one day where time is e.g. "4 hours", but not really worth a GCAL reminder then
     var closing = myJQ("#BidBuyNow_closingContainer,#ClosingTime_ClosingTimeContainer,tm-closing-time").text();
 
     if (closing && closing.indexOf("Closes:") > -1) {
-        closing = closing.replaceAll("th", "").replaceAll("st","").replaceAll("am", " am").replaceAll("pm", " pm")
+        closing = closing.replaceAll("th", "").replaceAll("st","").replaceAll("nd","").replaceAll("am", " am").replaceAll("pm", " pm")
         // get just date and time without dayname but including am/pm
         closing = myJQ.trim(closing.replace(new RegExp("\n", 'g'), ""));
         var closeTime = /Closes:\s+\w+\s+(.*[ap]m).*/.exec(closing);
