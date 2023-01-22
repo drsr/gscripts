@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       TradeMe Show All The Photos (Tampermonkey only)
 // @namespace  http://drsr/
-// @version    0.9.5
+// @version    0.9.6
 // @run-at      document-idle
 // @description  Show all the large photos on a listing
 // @include    /https:\/\/www\.trademe\.co\.nz\/.*\/[Ll]isting.*/
@@ -11,7 +11,7 @@
 // @grant      GM_addStyle
 // @grant      GM_getResourceURL
 // @copyright  public domain
-// @require    http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js
+// @require    https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js
 // @require    http://cdnjs.cloudflare.com/ajax/libs/jquery.lazyload/1.9.1/jquery.lazyload.min.js
 // @require    https://greasyfork.org/scripts/2723-bpopup/code/bPopup.js?version=7539
 // ==/UserScript==
